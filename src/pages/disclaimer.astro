@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const path = '/disclaimer';
+---
+<BaseLayout
+  title="Disclaimer"
+  description="Important disclaimer about the nature of tarot readings on this site."
+  path={path}
+>
+  <article class="prose">
+    <h1>Disclaimer</h1>
+    <p>
+      All readings, interpretations, and content on Daily Tarot are provided for entertainment and
+      self-reflection purposes only. They are not:
+    </p>
+    <ul>
+      <li>Medical, psychological, or psychiatric advice.</li>
+      <li>Legal advice or representation.</li>
+      <li>Financial, investment, or tax advice.</li>
+      <li>Professional counseling of any kind.</li>
+    </ul>
+    <p>
+      AI-generated interpretations reflect patterns in the cards and the prompt given. They are not
+      predictions and should not be treated as deterministic.
+    </p>
+    <p>
+      If you are facing a serious life decision, please consult a qualified professional in the relevant
+      field.
+    </p>
+  </article>
+</BaseLayout>

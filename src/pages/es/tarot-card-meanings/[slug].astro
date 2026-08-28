@@ -1,0 +1,33 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { DECK, slugify } from '../../../lib/cards';
+export function getStaticPaths() {
+  return DECK.map((card) => ({
+    params: { slug: slugify(card) },
+    props: { card },
+  }));
+}
+const { card } = Astro.props;
+---
+<BaseLayout
+  title={`${card.name} — Significado, Derecha & Invertida`}
+  description={`Significado de la carta de tarot ${card.name}: ${card.keywords.join(', ')}.`}
+  path={`/es/tarot-card-meanings/${slugify(card)}`}
+  locale="es"
+>
+  <article class="prose">
+    <h1>{card.name}</h1>
+    <p><strong>Palabras clave:</strong> {card.keywords.join(', ')}</p>
+    <h2>Significado derecho</h2>
+    <p>
+      Cuando {card.name} aparece derecho, señala {card.keywords[0]}. Te invita a prestar atención a los temas de
+      {card.keywords.slice(0, 3).join(', ')} en el área que preguntas.
+    </p>
+    <h2>Significado invertido</h2>
+    <p>
+      Invertida, la energía de {card.name} se vuelve hacia adentro — bloqueada, retrasada o excesiva —
+      invitándote a reequilibrar su expresión.
+    </p>
+    <p><a href="/es/">Saca tu tarot de hoy →</a></p>
+  </article>
+</BaseLayout>

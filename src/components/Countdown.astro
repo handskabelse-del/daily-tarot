@@ -1,0 +1,36 @@
+---
+export interface Props {
+  untilIso: string;
+}
+const { untilIso } = Astro.props;
+---
+<div class="lock-state" id="lock-state" data-until={untilIso}>
+  <h2>Your reading is set</h2>
+  <p>Come back tomorrow for a fresh draw. The cards will be waiting.</p>
+  <div class="countdown" id="countdown" role="timer" aria-live="polite">
+    <div class="countdown-unit"><span class="num" data-h>00</span><span class="lbl">Hours</span></div>
+    <div class="countdown-unit"><span class="num" data-m>00</span><span class="lbl">Minutes</span></div>
+    <div class="countdown-unit"><span class="num" data-s>00</span><span class="lbl">Seconds</span></div>
+  </div>
+</div>
+<script define:vars={{ untilIso }}>
+  (function () {
+    const el = document.getElementById('countdown');
+    if (!el) return;
+    const target = new Date(untilIso).getTime();
+    const pad = (n) => String(Math.max(0, n)).padStart(2, '0');
+    function tick() {
+      const now = Date.now();
+      const diff = Math.max(0, target - now);
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      el.querySelector('[data-h]').textContent = pad(h);
+      el.querySelector('[data-m]').textContent = pad(m);
+      el.querySelector('[data-s]').textContent = pad(s);
+      if (diff <= 0) location.reload();
+    }
+    tick();
+    setInterval(tick, 1000);
+  })();
+</script>

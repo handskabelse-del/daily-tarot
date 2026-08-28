@@ -1,0 +1,32 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ReadingTool from '../../components/ReadingTool.astro';
+import { websiteJsonLd, faqJsonLd } from '../../lib/seo';
+const path = '/es/';
+const faqs = [
+  { question: '¿Cómo funciona la lectura diaria?', answer: 'Pulsa "Recibir mi lectura" y sacamos nueve cartas al azar. Un lector de IA interpreta cada posición para ti.' },
+  { question: '¿Cuántas veces puedo rechazar?', answer: 'Puedes rechazar hasta dos lecturas al día. Después, debes esperar hasta la medianoche local.' },
+  { question: '¿Es personal?', answer: 'Sí. Cada lectura se genera únicamente a partir de las nueve cartas sacadas para ti, interpretadas por un lector de IA.' },
+  { question: '¿Necesito una cuenta?', answer: 'No. La herramienta funciona de forma anónima. Solo necesitas una clave de OpenRouter (gratuita) para generar interpretaciones.' },
+];
+---
+<BaseLayout
+  title="Lectura de Tarot Diaria Gratis — 9 Cartas, Interpretación Personal"
+  description="Lectura de tarot diaria gratis con 9 cartas. Saca tus cartas y recibe una interpretación personal generada por IA. Renueva tu perspectiva en menos de un minuto."
+  path={path}
+  locale="es"
+  jsonLd={[websiteJsonLd(), faqJsonLd(faqs)]}
+>
+  <ReadingTool locale="es" />
+
+  <section class="seo-section prose">
+    <h2>¿Qué es Daily Tarot?</h2>
+    <p>
+      Daily Tarot te ofrece una lectura personal y fresca cada día con un tirage de nueve cartas — uno de los
+      métodos más completos de una sola baraja en tarot. Cada tirage es único: nueve cartas sacadas al azar
+      de la baraja completa de 78 cartas, interpretadas por un lector de IA que explica lo que cada posición
+      significa para ti.
+    </p>
+    <p>A diferencia de un tirage genérico de tres cartas, una lectura de nueve cartas mapea el arco completo de una situación.</p>
+  </section>
+</BaseLayout>

@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+---
+<BaseLayout
+  title="Tarot Blog — Daily Insights, Spreads, and Card Meanings"
+  description="Articles on tarot card meanings, spreads, daily practice, and intuition. Updated weekly."
+  path="/blog"
+>
+  <article class="prose">
+    <h1>Tarot Blog</h1>
+    <p>Articles on reading tarot, the cards themselves, and building a daily practice.</p>
+
+    <div class="blog-grid">
+      {posts.map((p) => (
+        <article class="blog-card">
+          <a href={`/blog/${p.slug}`}>
+            {p.data.category && (
+              <div style="font-size:0.75rem;color:var(--accent-2);text-transform:uppercase;letter-spacing:0.1em">
+                {p.data.category}
+              </div>
+            )}
+            <h3>{p.data.title}</h3>
+            <p style="font-size:0.95rem;color:var(--fg-1)">{p.data.description}</p>
+          </a>
+          <div class="meta">
+            <time datetime={p.data.date.toISOString()}>
+              {p.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+            </time>
+          </div>
+        </article>
+      ))}
+    </div>
+  </article>
+</BaseLayout>

@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { deterministicDrawForDate } from '../../lib/draw';
+import { cardSuitSymbol } from '../../lib/cards';
+
+const today = new Date();
+const yyyy = today.getUTCFullYear();
+const mm = String(today.getUTCMonth() + 1).padStart(2, '0');
+const dd = String(today.getUTCDate()).padStart(2, '0');
+const todayStr = `${yyyy}-${mm}-${dd}`;
+const draw = deterministicDrawForDate(todayStr);
+const card = draw[0];
+const description = `Today's card is ${card.card.name} (${card.orientation}). Keywords: ${card.card.keywords.join(', ')}.`;
+const path = '/card-of-the-day';
+const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+---
+<BaseLayout
+  title={`Card of the Day — ${card.card.name} (${dateLabel})`}
+  description={description}
+  path={path}
+>
+  <article class="prose" style="text-align:center">
+    <p style="color:var(--accent-2);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem">
+      Card of the Day · {dateLabel}
+    </p>
+    <h1>{card.card.name}</h1>
+    <p style="font-size:1.1rem">
+      <span style="font-size:3rem;display:block;margin:1rem 0;color:var(--gold)" aria-hidden="true">
+        {cardSuitSymbol(card.card.suit)}
+      </span>
+      <em>{card.orientation === 'reversed' ? 'Reversed' : 'Upright'}</em> · {card.card.keywords.join(' · ')}
+    </p>
+
+    <div class="avatar-row" style="text-align:left;margin:2rem 0">
+      <div class="avatar" aria-hidden="true">☾</div>
+      <div class="avatar-bubble">
+        {card.orientation === 'reversed'
+          ? `Today ${card.card.name} appears reversed. The energy turns inward — look at what is being held back, what is asking to be released.`
+          : `Today ${card.card.name} appears upright. Its message is direct: bring ${card.card.keywords[0]} into what you do next.`}
+      </div>
+    </div>
+
+    <h2>How to use today's card</h2>
+    <p>
+      A single daily card is a quiet companion. Carry it with you for the next 24 hours and let it shape one
+      small choice. If something specific comes up, pull a full nine-card reading for a deeper look.
+    </p>
+
+    <p>
+      <a class="btn" href="/">Draw your daily 9-card reading →</a>
+    </p>
+
+    <p style="margin-top:2rem">
+      <a href={`/card-of-the-day/${todayStr}`}>Permalink for today</a> · <a href="/card-of-the-day/archive">View archive</a>
+    </p>
+  </article>
+</BaseLayout>

@@ -1,0 +1,44 @@
+---
+export interface Props {
+  title: string;
+  description?: string;
+  path?: string;
+  locale?: 'en' | 'es' | 'fr';
+  type?: 'website' | 'article';
+  image?: string;
+  noindex?: boolean;
+  jsonLd?: object | object[];
+}
+
+import { buildMeta, buildHreflangs } from '../lib/seo';
+
+const { title, description, path = Astro.url.pathname, locale = 'en', type, image, noindex, jsonLd } = Astro.props;
+const meta = buildMeta({ title, description, path, locale, type, image, noindex });
+const hreflangs = buildHreflangs(path);
+const jsonLdArray = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+
+const ogEntries: Array<[string, string]> = [];
+for (const [k, v] of Object.entries(meta.openGraph)) {
+  if (k === 'images' && Array.isArray(v)) {
+    for (const img of v) ogEntries.push(['og:image', (img as { url: string }).url]);
+  } else if (k !== 'images') {
+    ogEntries.push([`og:${k}`, String(v)]);
+  }
+}
+const twEntries: Array<[string, string]> = [];
+for (const [k, v] of Object.entries(meta.twitter)) {
+  if (k === 'images' && Array.isArray(v)) {
+    for (const img of v) twEntries.push(['twitter:image', String(img)]);
+  } else if (k !== 'images') {
+    twEntries.push([`twitter:${k}`, String(v)]);
+  }
+}
+---
+<title>{meta.title}</title>
+<meta name="description" content={meta.description} />
+<link rel="canonical" href={meta.canonical} />
+{ogEntries.map(([k, v]) => <meta property={k} content={v} />)}
+{twEntries.map(([k, v]) => <meta name={k} content={v} />)}
+{hreflangs.map(({ hreflang, href }) => <link rel="alternate" hreflang={hreflang} href={href} />)}
+{noindex && <meta name="robots" content="noindex, nofollow" />}
+{jsonLdArray.map((obj) => <script type="application/ld+json" set:html={JSON.stringify(obj)} />)}

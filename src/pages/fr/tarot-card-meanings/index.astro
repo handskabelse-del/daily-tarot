@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { DECK, slugify } from '../../../lib/cards';
+const sorted = [...DECK].sort((a, b) => a.name.localeCompare(b.name));
+---
+<BaseLayout
+  title="Signification des 78 Cartes de Tarot — Droites & Inversées"
+  description="Liste complète des 78 cartes de tarot avec leurs significations droites et inversées. Arcanes majeurs et mineurs."
+  path="/fr/tarot-card-meanings"
+  locale="fr"
+>
+  <article class="prose">
+    <h1>Signification des 78 Cartes de Tarot</h1>
+    <p>Toutes les cartes du tarot Rider–Waite–Smith en un seul endroit.</p>
+    <ul class="card-list">
+      {sorted.map((c) => (
+        <li>
+          <a href={`/fr/tarot-card-meanings/${slugify(c)}`}>
+            {c.name}
+            <div class="keywords">{c.keywords.slice(0, 2).join(' · ')}</div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </article>
+</BaseLayout>

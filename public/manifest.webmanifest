@@ -1,0 +1,18 @@
+{
+  "name": "Daily Tarot",
+  "short_name": "Daily Tarot",
+  "description": "Free daily tarot reading with 9 cards and a personal AI-generated interpretation.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07070d",
+  "theme_color": "#07070d",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ReadingTool from '../components/ReadingTool.astro';
+import { faqJsonLd, websiteJsonLd } from '../lib/seo';
+const faqs = [
+  {
+    question: 'How does the daily tarot reading work?',
+    answer:
+      'Click "Get my reading" and we draw nine random tarot cards in a classic nine-position spread. An AI reader interprets the cards specifically for you, position by position.',
+  },
+  {
+    question: 'How many times can I reject a reading?',
+    answer:
+      'You may reject up to two readings per day. After that, you must wait until local midnight for a fresh draw.',
+  },
+  {
+    question: 'Is the reading personal?',
+    answer:
+      'Yes. Each reading is generated uniquely from the specific nine cards drawn for you, interpreted by an AI reader. The deck is the full 78-card tarot.',
+  },
+  {
+    question: 'Do I need an account?',
+    answer:
+      'No. The reading tool works anonymously. You only need an OpenRouter API key (free) to generate AI interpretations.',
+  },
+  {
+    question: 'Is this for entertainment?',
+    answer:
+      'Yes. Daily Tarot is for entertainment and self-reflection only. It is not medical, legal, or financial advice.',
+  },
+];
+const jsonLd = faqJsonLd(faqs);
+---
+<BaseLayout
+  title="Free Daily Tarot Reading — 9 Cards, Personal Interpretation"
+  description="Get a free daily tarot reading with 9 cards. Draw your cards and receive a personal AI-generated interpretation. Refresh your perspective in under a minute."
+  path="/"
+  jsonLd={[websiteJsonLd(), jsonLd]}
+>
+  <ReadingTool locale="en" />
+
+  <section class="seo-section prose">
+    <h2>What is Daily Tarot?</h2>
+    <p>
+      Daily Tarot gives you a fresh, personal reading every day using a nine-card spread — one of the most
+      complete single-deck layouts in tarot. Each draw is unique: nine cards are pulled at random from the
+      full 78-card deck, then interpreted by an AI reader that explains what each position means for you.
+    </p>
+    <p>
+      Unlike a generic three-card pull, a nine-card reading maps the full arc of a situation: what's happening
+      now, what underlies it, what's approaching, and where the path leads if you continue as you are.
+    </p>
+
+    <h2>How to use this site</h2>
+    <ol>
+      <li>Click <strong>Get my reading</strong> to draw your nine cards.</li>
+      <li>Read the interpretation position by position.</li>
+      <li>If it doesn't feel right, you may <strong>reject</strong> up to two readings per day for a new draw.</li>
+      <li>When you find one that resonates, <strong>accept</strong> it and carry it with you.</li>
+    </ol>
+
+    <h2>Frequently asked questions</h2>
+    <div class="faq">
+      {faqs.map((f) => (
+        <details>
+          <summary>{f.question}</summary>
+          <p>{f.answer}</p>
+        </details>
+      ))}
+    </div>
+
+    <h2>Explore more</h2>
+    <ul>
+      <li><a href="/card-of-the-day">Today's card</a> — a single, daily card for everyone.</li>
+      <li><a href="/tarot-card-meanings">All 78 tarot card meanings</a>.</li>
+      <li><a href="/three-card-spread">Three-card spread guide</a>.</li>
+      <li><a href="/daily-tarot-guide">How to read tarot daily</a>.</li>
+      <li><a href="/blog">Tarot blog</a>.</li>
+    </ul>
+  </section>
+</BaseLayout>

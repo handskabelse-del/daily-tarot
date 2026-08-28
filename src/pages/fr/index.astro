@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ReadingTool from '../../components/ReadingTool.astro';
+import { websiteJsonLd, faqJsonLd } from '../../lib/seo';
+const path = '/fr/';
+const faqs = [
+  { question: 'Comment fonctionne le tirage quotidien ?', answer: 'Cliquez sur « Recevoir mon tirage » et nous tirons neuf cartes au hasard. Un lecteur IA interprète chaque position pour vous.' },
+  { question: 'Combien de fois puis-je refuser ?', answer: 'Vous pouvez refuser jusqu’à deux tirages par jour. Après, vous devez attendre minuit (heure locale).' },
+  { question: 'Est-ce personnel ?', answer: 'Oui. Chaque tirage est généré uniquement à partir des neuf cartes tirées pour vous, interprétées par un lecteur IA.' },
+  { question: 'Ai-je besoin d’un compte ?', answer: 'Non. L’outil fonctionne de manière anonyme. Vous avez seulement besoin d’une clé OpenRouter (gratuite) pour générer les interprétations.' },
+];
+---
+<BaseLayout
+  title="Tirage de Tarot Quotidien Gratuit — 9 Cartes, Interprétation Personnelle"
+  description="Tirage de tarot quotidien gratuit avec 9 cartes. Tirez vos cartes et recevez une interprétation personnelle générée par IA."
+  path={path}
+  locale="fr"
+  jsonLd={[websiteJsonLd(), faqJsonLd(faqs)]}
+>
+  <ReadingTool locale="fr" />
+
+  <section class="seo-section prose">
+    <h2>Qu’est-ce que Daily Tarot ?</h2>
+    <p>
+      Daily Tarot vous offre un tirage personnel et frais chaque jour, en utilisant un tirage en neuf cartes —
+      l’une des méthodes les plus complètes à un seul jeu. Chaque tirage est unique : neuf cartes tirées au
+      hasard dans le jeu complet de 78 cartes, puis interprétées par un lecteur IA qui explique ce que
+      chaque position signifie pour vous.
+    </p>
+  </section>
+</BaseLayout>

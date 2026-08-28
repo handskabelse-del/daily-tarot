@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { deterministicDrawForDate } from '../../lib/draw';
+import { cardSuitSymbol } from '../../lib/cards';
+
+export function getStaticPaths() {
+  const paths: Array<{ params: { date: string }; props: { date: string; label: string; isFuture: boolean } }> = [];
+  const start = new Date(Date.UTC(2025, 0, 1));
+  const today = new Date();
+  const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  for (let d = new Date(start); d <= todayUtc; d.setUTCDate(d.getUTCDate() + 1)) {
+    const yyyy = d.getUTCFullYear();
+    const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    const date = `${yyyy}-${mm}-${dd}`;
+    const label = d.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+    paths.push({ params: { date }, props: { date, label, isFuture: false } });
+  }
+  return paths;
+}
+
+const { date, label } = Astro.props;
+const draw = deterministicDrawForDate(date);
+const card = draw[0];
+const description = `Card of the day for ${label}: ${card.card.name} (${card.orientation}). Keywords: ${card.card.keywords.join(', ')}.`;
+---
+<BaseLayout
+  title={`Card of the Day — ${card.card.name} (${label})`}
+  description={description}
+  path={`/card-of-the-day/${date}`}
+>
+  <article class="prose" style="text-align:center">
+    <p style="color:var(--accent-2);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem">
+      Card of the Day · {label}
+    </p>
+    <h1>{card.card.name}</h1>
+    <p style="font-size:1.1rem">
+      <span style="font-size:3rem;display:block;margin:1rem 0;color:var(--gold)" aria-hidden="true">
+        {cardSuitSymbol(card.card.suit)}
+      </span>
+      <em>{card.orientation === 'reversed' ? 'Reversed' : 'Upright'}</em> · {card.card.keywords.join(' · ')}
+    </p>
+
+    <p>
+      <a href="/card-of-the-day">Today's card</a> · <a href="/">Draw your 9-card reading</a>
+    </p>
+  </article>
+</BaseLayout>

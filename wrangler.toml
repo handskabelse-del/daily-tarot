@@ -1,0 +1,19 @@
+name = "daily-tarot"
+compatibility_date = "2024-12-01"
+pages_build_output_dir = "./dist"
+
+# KV namespace for the daily-rejection counter.
+# Create with: npx wrangler kv:namespace create DAILY_TAROT_KV
+# Then replace the id below with the returned id.
+[[kv_namespaces]]
+binding = "DAILY_TAROT_KV"
+id = "REPLACE_WITH_KV_ID"
+
+# Public build-time environment variables. Visible to the function code.
+# Secrets (COOKIE_SECRET, OPENROUTER_DEFAULT_KEY) are set separately via
+#   npx wrangler secret put COOKIE_SECRET
+#   npx wrangler secret put OPENROUTER_DEFAULT_KEY
+[vars]
+SITE_URL = "https://dailytarot.example.com"
+READINGS_PAUSED = "false"
+OPENROUTER_MODEL = "nvidia/nemotron-3-5-lightning:free"

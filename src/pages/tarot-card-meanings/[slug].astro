@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { DECK, slugify } from '../../lib/cards';
+
+export function getStaticPaths() {
+  return DECK.map((card) => ({
+    params: { slug: slugify(card) },
+    props: { card },
+  }));
+}
+
+const { card } = Astro.props;
+const title = `${card.name} — Meaning, Upright & Reversed`;
+const description = `${card.name} tarot card meaning: ${card.keywords.join(', ')}. Upright and reversed interpretations, and what ${card.name} means in love, career, and daily life.`;
+const path = `/tarot-card-meanings/${slugify(card)}`;
+---
+<BaseLayout title={title} description={description} path={path}>
+  <article class="prose">
+    <p style="color:var(--accent-2);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.1em">
+      {card.arcana === 'major' ? 'Major Arcana' : `${card.suit ? card.suit[0].toUpperCase() + card.suit.slice(1) : ''} suit`}
+    </p>
+    <h1>{card.name}</h1>
+    <p><strong>Keywords:</strong> {card.keywords.join(', ')}</p>
+
+    <h2>Upright meaning</h2>
+    <p>
+      When <strong>{card.name}</strong> appears upright, it signals {card.keywords[0]}. It invites you to pay attention to the
+      themes of {card.keywords.slice(0, 3).join(', ')} in whatever area of life you are asking about.
+    </p>
+    <p>
+      Upright cards in a daily reading are direct messages: the energy is available to you, ready to be used, and
+      pointing clearly at a single truth.
+    </p>
+
+    <h2>Reversed meaning</h2>
+    <p>
+      When <strong>{card.name}</strong> appears reversed, the energy turns inward. It may suggest blocked, delayed, or
+      overdone {card.keywords[0]} — or a need to re-balance how you express it.
+    </p>
+    <p>
+      Reversed cards are not bad luck. They are an invitation to look at the same theme from the other side.
+    </p>
+
+    <h2>{card.name} in a daily reading</h2>
+    <p>
+      Drawn in a nine-card spread, {card.name} carries the weight of its position. Notice whether it lands in
+      <em>The Present</em>, <em>The Challenge</em>, or <em>The Outcome</em> — its message changes with placement.
+    </p>
+
+    <h2>Get today's reading</h2>
+    <p>
+      <a class="btn" href="/">Draw your daily cards →</a>
+    </p>
+  </article>
+</BaseLayout>

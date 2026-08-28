@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const path = '/terms';
+---
+<BaseLayout
+  title="Terms of Service"
+  description="Terms of service for Daily Tarot."
+  path={path}
+>
+  <article class="prose">
+    <h1>Terms of Service</h1>
+    <p><em>Last updated: January 2026.</em></p>
+
+    <h2>1. Acceptance</h2>
+    <p>By using Daily Tarot you agree to these terms. If you do not agree, do not use the site.</p>
+
+    <h2>2. Service</h2>
+    <p>
+      Daily Tarot provides a free, AI-generated tarot reading experience. The service is provided "as is"
+      without warranty of any kind.
+    </p>
+
+    <h2>3. Entertainment only</h2>
+    <p>
+      The readings are for entertainment and personal reflection only. They are not medical, legal,
+      financial, or professional advice. See the full <a href="/disclaimer">disclaimer</a>.
+    </p>
+
+    <h2>4. User conduct</h2>
+    <p>You agree not to abuse the service, attempt to bypass the daily limit, or use the site for unlawful purposes.</p>
+
+    <h2>5. Third-party services</h2>
+    <p>
+      The site uses Google AdSense, Google Analytics, and OpenRouter. Their respective terms apply to your
+      use of those services.
+    </p>
+
+    <h2>6. Changes</h2>
+    <p>We may update these terms at any time. Continued use means you accept the updated terms.</p>
+
+    <h2>7. Contact</h2>
+    <p>terms@dailytarot.example.com</p>
+  </article>
+</BaseLayout>

@@ -1,0 +1,38 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { deterministicDrawForDate } from '../../lib/draw';
+
+const days: Array<{ date: string; cardName: string; orientation: string }> = [];
+const today = new Date();
+const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+for (let i = 0; i < 30; i++) {
+  const d = new Date(todayUtc);
+  d.setUTCDate(d.getUTCDate() - i);
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const date = `${yyyy}-${mm}-${dd}`;
+  const draw = deterministicDrawForDate(date);
+  days.push({ date, cardName: draw[0].card.name, orientation: draw[0].orientation });
+}
+---
+<BaseLayout
+  title="Card of the Day Archive — Last 30 Days"
+  description="Browse the card of the day for the last 30 days. See the daily tarot card and reflect on patterns."
+  path="/card-of-the-day/archive"
+>
+  <article class="prose">
+    <h1>Card of the Day — Archive</h1>
+    <p>The last 30 daily cards. Click any day to see the full entry.</p>
+    <ul class="card-list">
+      {days.map((d) => (
+        <li>
+          <a href={`/card-of-the-day/${d.date}`}>
+            {d.date}
+            <div class="keywords">{d.cardName} · {d.orientation}</div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </article>
+</BaseLayout>

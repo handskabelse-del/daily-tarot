@@ -1,0 +1,36 @@
+---
+import type { Card } from '../lib/cards';
+import { cardSuitSymbol, imageFor } from '../lib/cards';
+export interface Props {
+  card: Card;
+  orientation: 'upright' | 'reversed';
+  positionName: string;
+  flipped: boolean;
+}
+const { card, orientation, positionName, flipped } = Astro.props;
+const img = imageFor(card);
+const hasArt = Boolean(img);
+---
+<div class={`tarot-card${flipped ? ' is-flipped' : ''}${hasArt ? ' has-art' : ''}`} data-card-id={card.id}>
+  <div class="tarot-card-inner">
+    <div class="tarot-card-face tarot-card-back" aria-hidden={flipped}>
+      <img src="/assets/cards/back.jfif" alt="" loading="lazy" decoding="async" />
+    </div>
+    <div
+      class={`tarot-card-face tarot-card-front${orientation === 'reversed' ? ' is-reversed' : ''}`}
+      aria-hidden={!flipped}
+    >
+      {hasArt && (
+        <img class="card-art" src={img} alt={card.name} loading="lazy" decoding="async" />
+      )}
+      <div class="card-overlay">
+        <span class="position">{positionName}</span>
+        <div class="card-name-row">
+          <span class="symbol" aria-hidden="true">{cardSuitSymbol(card.suit)}</span>
+          <span class="name">{card.name}</span>
+        </div>
+        <span class="orientation">{orientation}</span>
+      </div>
+    </div>
+  </div>
+</div>

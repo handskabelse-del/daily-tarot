@@ -1,0 +1,79 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { DECK, slugify } from '../../lib/cards';
+
+const sorted = [...DECK].sort((a, b) => a.name.localeCompare(b.name));
+---
+<BaseLayout
+  title="All 78 Tarot Card Meanings — Upright & Reversed"
+  description="Complete list of all 78 tarot cards with upright and reversed meanings. Major and Minor Arcana, all four suits. Updated for 2026."
+  path="/tarot-card-meanings"
+>
+  <article class="prose">
+    <h1>All 78 Tarot Card Meanings</h1>
+    <p>
+      Every card in the Rider–Waite–Smith tarot, in one place. Tap any card to read its upright and reversed
+      meaning, plus what it suggests in a daily reading.
+    </p>
+
+    <h2>Major Arcana</h2>
+    <ul class="card-list">
+      {sorted.filter((c) => c.arcana === 'major').map((c) => (
+        <li>
+          <a href={`/tarot-card-meanings/${slugify(c)}`}>
+            {c.name}
+            <div class="keywords">{c.keywords.slice(0, 2).join(' · ')}</div>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <h2>Wands</h2>
+    <ul class="card-list">
+      {sorted.filter((c) => c.suit === 'wands').map((c) => (
+        <li>
+          <a href={`/tarot-card-meanings/${slugify(c)}`}>
+            {c.name}
+            <div class="keywords">{c.keywords.slice(0, 2).join(' · ')}</div>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <h2>Cups</h2>
+    <ul class="card-list">
+      {sorted.filter((c) => c.suit === 'cups').map((c) => (
+        <li>
+          <a href={`/tarot-card-meanings/${slugify(c)}`}>
+            {c.name}
+            <div class="keywords">{c.keywords.slice(0, 2).join(' · ')}</div>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <h2>Swords</h2>
+    <ul class="card-list">
+      {sorted.filter((c) => c.suit === 'swords').map((c) => (
+        <li>
+          <a href={`/tarot-card-meanings/${slugify(c)}`}>
+            {c.name}
+            <div class="keywords">{c.keywords.slice(0, 2).join(' · ')}</div>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <h2>Pentacles</h2>
+    <ul class="card-list">
+      {sorted.filter((c) => c.suit === 'pentacles').map((c) => (
+        <li>
+          <a href={`/tarot-card-meanings/${slugify(c)}`}>
+            {c.name}
+            <div class="keywords">{c.keywords.slice(0, 2).join(' · ')}</div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </article>
+</BaseLayout>

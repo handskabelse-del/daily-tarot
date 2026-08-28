@@ -1,0 +1,41 @@
+---
+---
+<div class="consent-banner" id="consent-banner" role="dialog" aria-label="Cookie consent">
+  <p>
+    We use cookies for ads and analytics to keep this site free.
+    <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a>
+  </p>
+  <div class="actions">
+    <button class="btn btn-secondary" id="consent-reject" type="button">Reject</button>
+    <button class="btn" id="consent-accept" type="button">Accept</button>
+  </div>
+</div>
+<script>
+  (function () {
+    const KEY = 'dt_consent';
+    const banner = document.getElementById('consent-banner');
+    if (!banner) return;
+    const stored = localStorage.getItem(KEY);
+    if (stored === 'accepted') {
+      banner.remove();
+      window.dispatchEvent(new CustomEvent('dt:consent-accepted'));
+    } else if (stored === 'rejected') {
+      banner.remove();
+    } else {
+      banner.hidden = false;
+    }
+    document.getElementById('consent-accept')?.addEventListener('click', () => {
+      localStorage.setItem(KEY, 'accepted');
+      banner.remove();
+      window.dispatchEvent(new CustomEvent('dt:consent-accepted'));
+      try {
+        const w = window as unknown as { adsbygoogle?: unknown[] };
+        (w.adsbygoogle = w.adsbygoogle || []).push({});
+      } catch (_) {}
+    });
+    document.getElementById('consent-reject')?.addEventListener('click', () => {
+      localStorage.setItem(KEY, 'rejected');
+      banner.remove();
+    });
+  })();
+</script>

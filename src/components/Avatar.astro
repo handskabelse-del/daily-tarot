@@ -1,0 +1,16 @@
+---
+export interface Props {
+  size?: number;
+  label?: string;
+  dimmed?: boolean;
+}
+const { size = 220, label = 'Daily Tarot avatar', dimmed = false } = Astro.props;
+---
+<div
+  class={`avatar-img${dimmed ? ' is-dimmed' : ''}`}
+  role="img"
+  aria-label={label}
+  style={`width:${size}px;height:${size}px`}
+>
+  <img src="/assets/witch.png" alt="" loading="eager" decoding="async" />
+</div>

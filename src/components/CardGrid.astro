@@ -1,0 +1,19 @@
+---
+import type { DrawCard } from '../lib/draw';
+import CardFace from './CardFace.astro';
+export interface Props {
+  cards: DrawCard[];
+  flipped: boolean;
+}
+const { cards, flipped } = Astro.props;
+---
+<div class="card-grid" id="card-grid">
+  {cards.map((c) => (
+    <CardFace
+      card={c.card}
+      orientation={c.orientation}
+      positionName={c.position.name}
+      flipped={flipped}
+    />
+  ))}
+</div>

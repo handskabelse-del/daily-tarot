@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { articleJsonLd } from '../../lib/seo';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  return posts.map((p) => ({
+    params: { slug: p.slug },
+    props: { post: p },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+const path = `/blog/${post.slug}`;
+const dateStr = post.data.date.toISOString();
+const jsonLd = articleJsonLd({
+  title: post.data.title,
+  description: post.data.description,
+  path,
+  date: dateStr,
+});
+---
+<BaseLayout
+  title={`${post.data.title} — Daily Tarot`}
+  description={post.data.description}
+  path={path}
+  type="article"
+  jsonLd={jsonLd}
+>
+  <article class="prose">
+    <p style="color:var(--accent-2);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.1em">
+      {post.data.category || 'Article'} · <time datetime={dateStr}>{post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</time>
+    </p>
+    <h1>{post.data.title}</h1>
+    <p style="font-size:1.1rem;color:var(--fg-1);font-style:italic">{post.data.description}</p>
+    <Content />
+  </article>
+</BaseLayout>
