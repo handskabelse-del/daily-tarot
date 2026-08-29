@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/
 Disallow: /api/
+Disallow: /api/admin/
 
 Sitemap: https://dailytarot.example.com/sitemap-index.xml

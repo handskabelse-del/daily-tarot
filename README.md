@@ -218,34 +218,52 @@ the file.
 
 A small browser-based admin lives at **`/admin`** while the dev server is
 running. It is for local use only — it writes directly into your checkout
-and never pushes to GitHub.
+and pushes to GitHub for you.
 
 ```bash
-# In one terminal
-export OPENROUTER_DEFAULT_KEY=sk-or-v1-...
+# Start the dev server (only Astro is needed; the admin has its own /api/admin/* routes)
 npm run dev
 # In your browser
 open http://localhost:4321/admin
 ```
 
+### One-button publish
+
+Click **Publish now** in the admin and:
+
+1. The post is written to `src/content/blog/<slug>.md` (and any images to `public/assets/blog/<slug>/`).
+2. The admin `git add`s those files and runs `git commit -m "chore(blog): <title>"`.
+3. The admin `git push origin main`es.
+4. The existing `.github/workflows/deploy.yml` redeploys Cloudflare Pages (~30–60s).
+
+A status badge in the header shows the local git state (clean / N unsaved / N ahead) so you always know what's queued for push.
+
+If you'd rather just save locally without pushing, use **Save as draft** instead.
+
+### Production lockout
+
+The admin UI and its `/api/admin/*` routes are blocked in production by `src/middleware.ts` (verified at build time via `import.meta.env.PROD`). On Cloudflare Pages every request to `/admin` or `/api/admin/*` returns a 404 with `X-Robots-Tag: noindex, nofollow`. `public/robots.txt` also disallows the admin paths as belt-and-suspenders.
+
 ### What you can do
 
 | Tab | What it does |
 |---|---|
-| **New post** | Pick a model from the dropdown (free + paid OpenRouter models, grouped). Type a topic or click ✨ **Suggest 5 topics** to have a fast model propose five. Drag-drop two images (lead + illustration). Hit **Generate post** (or `Ctrl+Enter` in the topic field). The live preview renders with a **validation panel** (word count, title/description length, internal link count, external link count, blocklist hits). Save as draft, publish now, or copy markdown. |
+| **New post** | Pick a model from the dropdown (free + paid OpenRouter models, grouped). Default is `minimax/minimax-m2.7:free` — verified to return content reliably. Type a topic or click ✨ **Suggest 5 topics** to have a fast model propose five. Drag-drop two images (lead + illustration). Hit **Generate post** (or `Ctrl+Enter` in the topic field). The live preview renders with a **validation panel** (word count, title/description length, internal link count, external link count, blocklist hits). Save as draft, publish now (which also commits + pushes), or copy markdown. |
 | **Browse & edit** | Lists all posts, filterable by `all` / `drafts` / `published`. Click any post to open a full editor (title / description / category / body / draft toggle). `Ctrl+S` saves. Server re-validates on every save. |
 | **Settings** | Shows the live OpenRouter key status, default model, and keyboard shortcuts. |
 
-### What it deliberately does not do
+### Environment
 
-- It does not push to GitHub. You `git add` + `git push` yourself.
-- It is not deployed to Cloudflare Pages. The page is `noindex,nofollow` and
-  the API routes only run on the dev server (and on Cloudflare Pages if you
-  explicitly opt in by setting `OPENROUTER_DEFAULT_KEY` in your Pages
-  environment — but the route writes to the local `src/content/blog/` of
-  whatever the function is attached to, so it's only useful locally).
-- It does not auto-translate posts. The evergreen generator targets English.
-- It does not generate images. You paste 2.
+The admin reads `OPENROUTER_DEFAULT_KEY` from any of:
+1. `process.env.OPENROUTER_DEFAULT_KEY` (set inline: `OPENROUTER_DEFAULT_KEY=sk-or-v1-... npm run dev`).
+2. `.dev.vars` (the Wrangler convention used by this project — read from disk by the admin).
+3. `.env` (the Astro/Vite convention).
+
+**Heads up on model names:** OpenRouter rotates the free tier frequently.
+The defaults in `src/lib/admin-shared.ts` are kept current with what's free
+and responsive, but model slugs sometimes change. If a model returns
+`unavailable for free` or `not a valid model ID`, the admin surfaces the
+exact OpenRouter error message — pick a different model from the dropdown.
 
 ### Safety
 
@@ -255,21 +273,27 @@ open http://localhost:4321/admin
 - Image uploads accept `.jpg .jpeg .png .webp .gif .avif`, max 8 MB each.
 - Topic suggestions and generated posts use the same voice and safety rules
   as the CLI scripts.
+- The publish flow requires that `git` is installed and your repo has a
+  configured `origin` remote. If push fails (no auth, no network, etc.)
+  the admin shows the exact error — your draft is still saved locally.
 
 ### Files added for the admin
 
 ```
-src/lib/admin-shared.ts          # shared types, prompt builders, validator, model list
-src/lib/admin-server.ts          # server-side OpenRouter client + markdown preview
-src/pages/api/admin/generate.ts  # POST: generate a post (no file write)
+src/lib/admin-shared.ts              # shared types, prompt builders, validator, model list
+src/lib/admin-server.ts              # server-side OpenRouter client + markdown preview + git helpers
+src/middleware.ts                    # blocks /admin* in production (build-time gated)
+src/pages/api/admin/generate.ts      # POST: generate a post (no file write)
 src/pages/api/admin/suggest-topics.ts  # POST: suggest 5 topics  + GET config
-src/pages/api/admin/save.ts      # POST: write MDX + 2 images to disk
-src/pages/api/admin/list.ts      # GET: list posts (filterable)
-src/pages/api/admin/read.ts      # GET: read raw markdown of a post
-src/pages/api/admin/update.ts    # POST: update an existing post
-src/pages/admin/index.astro      # the UI
-src/styles/admin.css             # admin-only styles
-public/admin.js                  # the SPA script
+src/pages/api/admin/save.ts          # POST: write MDX + 2 images to disk
+src/pages/api/admin/list.ts          # GET: list posts (filterable)
+src/pages/api/admin/read.ts          # GET: read raw markdown of a post
+src/pages/api/admin/update.ts        # POST: update an existing post
+src/pages/api/admin/ping.ts          # GET: preflight model + key check
+src/pages/api/admin/publish.ts       # GET: git status; POST: git add + commit + push
+src/pages/admin/index.astro          # the UI
+src/styles/admin.css                 # admin-only styles
+public/admin.js                      # the SPA script
 ```
 
 The site build adds `@astrojs/cloudflare` as a dev dependency so the build

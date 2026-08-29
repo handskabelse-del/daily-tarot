@@ -207,7 +207,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 export const onRequestOptions: PagesFunction<Env> = async ({ request }) => handleOptions(request);
 
 async function callOpenRouter(env: Env, key: string, cards: ReturnType<typeof drawNine>, question: string, locale: string): Promise<ReadingJson> {
-  const model = env.OPENROUTER_MODEL || 'nvidia/nemotron-3-5-lightning:free';
+  const model = env.OPENROUTER_MODEL || 'nvidia/nemotron-3.5-lightning:free';
   const referer = env.SITE_URL || 'https://dailytarot.example.com';
   const controller = new AbortController();
   // 30s budget — enough for slow free models, not enough to hang the user.

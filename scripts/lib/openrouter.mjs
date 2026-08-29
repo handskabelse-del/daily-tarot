@@ -12,8 +12,8 @@ function assertKey() {
 }
 
 function extractJson(raw) {
-  // Some free models add prose around the JSON. Strip code fences and
-  // grab the first balanced {...} block.
+  // Strip code fences, then find the first balanced { ... } block.
+  // Tolerant of trailing/leading prose and reasoning text.
   let cleaned = String(raw || '').trim();
   cleaned = cleaned
     .replace(/^```json\s*/i, '')
@@ -22,11 +22,28 @@ function extractJson(raw) {
     .trim();
 
   const first = cleaned.indexOf('{');
-  const last = cleaned.lastIndexOf('}');
-  if (first === -1 || last === -1 || last <= first) {
+  if (first === -1) {
     throw new Error('Model did not return a JSON object');
   }
-  return JSON.parse(cleaned.slice(first, last + 1));
+  // Walk forward, tracking depth, to find the matching `}`.
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = first; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\') { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return JSON.parse(cleaned.slice(first, i + 1));
+    }
+  }
+  const last = cleaned.lastIndexOf('}');
+  if (last > first) return JSON.parse(cleaned.slice(first, last + 1));
+  throw new Error('Model did not return a balanced JSON object');
 }
 
 /**

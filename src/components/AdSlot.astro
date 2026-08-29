@@ -4,18 +4,22 @@ export interface Props {
 }
 const { slot } = Astro.props;
 const clientId = import.meta.env.PUBLIC_ADSENSE_CLIENT_ID || '';
+const adId = slot === 'top' ? '1111111111' : slot === 'infeed' ? '2222222222' : '3333333333';
+const adFormat = slot === 'top' ? 'auto' : 'fluid';
 ---
-{clientId ? (
-  <ins
-    class="adsbygoogle ad-slot"
-    data-ad-client={clientId}
-    data-ad-slot={slot === 'top' ? '1111111111' : slot === 'infeed' ? '2222222222' : '3333333333'}
-    data-ad-format={slot === 'top' ? 'auto' : 'fluid'}
-    data-full-width-responsive="true"
-    style="display:block"
-  ></ins>
-) : (
-  <div class="ad-slot" aria-label="Advertisement placeholder">
-    <span class="ad-slot-label">Advertisement</span>
-  </div>
-)}
+<div class="ad-slot-wrapper" data-ad-slot={slot}>
+  {clientId ? (
+    <ins
+      class="adsbygoogle ad-slot"
+      data-ad-client={clientId}
+      data-ad-slot={adId}
+      data-ad-format={adFormat}
+      data-full-width-responsive="true"
+      style="display:block"
+    ></ins>
+  ) : (
+    <div class="ad-slot" aria-label="Advertisement placeholder">
+      <span class="ad-slot-label">Advertisement</span>
+    </div>
+  )}
+</div>

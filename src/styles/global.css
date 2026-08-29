@@ -993,6 +993,11 @@ p {
   padding: 0.5rem;
 }
 
+.blog-grid-ad {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
 .ad-slot.is-loaded {
   border: none;
   background: transparent;

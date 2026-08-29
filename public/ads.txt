@@ -1,0 +1,8 @@
+# Placeholder — replace with the real AdSense verification line once you have it.
+# Format: google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+# Get this from: AdSense → Account → Account information → ads.txt snippet
+# Until you paste the real line, the placeholder below makes ads.txt resolve to a
+# valid file (required for AdSense to start checking the site) but it WILL NOT
+# match your real publisher ID, so the file will fail verification until you
+# replace it with the line AdSense gives you.
+google.com, pub-8126581156947228, DIRECT, f08c47fec0942fa0

@@ -1,0 +1,53 @@
+name: Deploy to Cloudflare Pages (optional / manual)
+
+# This workflow is OFF by default. The daily-tarot site deploys via
+# Cloudflare's native GitHub integration (Settings → Builds & deployments
+# in the Cloudflare dashboard), which auto-deploys on every push to main.
+#
+# This file is kept as a fallback / opt-in path for users who:
+#   - Don't want to use the native integration
+#   - Need to deploy from a fork or branch
+#   - Want to deploy without the dashboard connection
+#
+# To enable: rename this file to `deploy.yml` (drop the `.disabled`
+# suffix). When enabled, it requires these GitHub repo secrets:
+#   - CLOUDFLARE_API_TOKEN: with Account | Cloudflare Pages | Edit perms
+#   - CLOUDFLARE_ACCOUNT_ID: shown in the Cloudflare dashboard sidebar
+#
+# When the native integration is doing the deploy, do NOT enable this
+# workflow — they will race and one will fail with an auth error.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: daily-tarot
+          directory: dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

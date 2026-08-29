@@ -28,6 +28,19 @@ const jsonLd = [
     { name: post.data.title, path },
   ]),
 ];
+// Inline ad rendering. Astro components passed as direct children to a layout's
+// <slot/> were being silently dropped on this codebase, so we render the
+// ad-slot markup directly here. When `PUBLIC_ADSENSE_CLIENT_ID` is set we
+// emit the real AdSense <ins> tag; otherwise we show a labelled placeholder.
+const adsenseClient = import.meta.env.PUBLIC_ADSENSE_CLIENT_ID || '';
+const topAdSlotId = '1111111111';
+const infeedAdSlotId = '2222222222';
+const renderAd = (position: 'top' | 'infeed') => adsenseClient
+  ? `<ins class="adsbygoogle ad-slot" data-ad-client="${adsenseClient}" data-ad-slot="${position === 'top' ? topAdSlotId : infeedAdSlotId}" data-ad-format="${position === 'top' ? 'auto' : 'fluid'}" data-full-width-responsive="true" style="display:block"></ins>`
+  : `<div class="ad-slot" aria-label="Advertisement placeholder"><span class="ad-slot-label">Advertisement</span></div>`;
+const topAdHtml = renderAd('top');
+const infeedAdHtml = renderAd('infeed');
+const hasAdsense = !!adsenseClient;
 ---
 <BaseLayout
   title={`${post.data.title} — Daily Tarot`}
@@ -42,6 +55,13 @@ const jsonLd = [
     </p>
     <h1>{post.data.title}</h1>
     <p style="font-size:1.1rem;color:var(--fg-1);font-style:italic">{post.data.description}</p>
+  </article>
+
+  <div class="ad-slot-wrapper" data-ad-slot="top" data-has-adsense={String(hasAdsense)} set:html={topAdHtml} />
+
+  <article class="prose">
     <Content />
   </article>
+
+  <div class="ad-slot-wrapper" data-ad-slot="infeed" data-has-adsense={String(hasAdsense)} set:html={infeedAdHtml} />
 </BaseLayout>

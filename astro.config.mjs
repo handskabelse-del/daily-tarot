@@ -7,10 +7,14 @@ export default defineConfig({
   site: 'https://dailytarot.example.com',
   output: 'static',
   adapter: cloudflare({
-    // The public site remains fully static. Only the /admin and /api/admin/*
-    // routes are server-rendered (they carry `export const prerender = false`).
-    // The Cloudflare adapter is only required for the build to succeed with
-    // those on-demand routes; in dev the Astro dev server runs them directly.
+    // The public site remains fully static. The /admin and /api/admin/*
+    // routes are server-rendered (prerender = false) and are BLOCKED
+    // in production by src/middleware.ts — so the deployed bundle
+    // always responds 404 to /admin* (verified by `import.meta.env.PROD`).
+    // In dev they run normally at http://localhost:4321/admin.
+    // The Cloudflare adapter is required so the build can compile the
+    // two functions in functions/api/* (reading, limit) that the live
+    // site actually uses.
     imageService: 'passthrough',
   }),
   trailingSlash: 'never',

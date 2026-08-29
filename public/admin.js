@@ -84,25 +84,24 @@
           const o = document.createElement('option');
           o.value = m.id;
           o.textContent = m.label;
-          if (m.id === 'openrouter/auto') o.selected = true;
+          // The first "Free" model in the curated list is the default.
+          // (Matches DEFAULT_MODEL in src/lib/admin-shared.ts.)
+          if (g === 'Free' && m.id.startsWith('minimax/')) o.selected = true;
           og.appendChild(o);
         }
         modelSel.appendChild(og);
       }
-      const ping = await fetch('/api/admin/suggest-topics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seed: 'ping' }),
-      });
-      if (ping.ok) {
+      const ping = await fetch('/api/admin/ping?model=' + encodeURIComponent(modelSel.value));
+      const pingJson = await ping.json().catch(() => ({}));
+      if (pingJson.ok) {
         modelBadge.classList.add('ok'); modelBadge.classList.remove('err');
         keyDot.classList.add('ok'); keyDot.classList.remove('err');
-        keyLabel.textContent = 'OpenRouter key is loaded.';
+        keyLabel.textContent = `Model ready (${pingJson.latencyMs}ms)`;
       } else {
-        const err = await ping.json().catch(() => ({}));
         modelBadge.classList.add('err'); modelBadge.classList.remove('ok');
         keyDot.classList.add('err'); keyDot.classList.remove('ok');
-        keyLabel.textContent = err?.error || 'Key not detected.';
+        keyLabel.textContent = pingJson.error || 'Model unreachable';
+        keyLabel.title = pingJson.error || '';
       }
     } catch (e) {
       modelBadge.classList.add('err');
@@ -111,6 +110,75 @@
     }
   }
   loadConfig();
+
+  // Re-ping whenever the user picks a different model so the header dot
+  // reflects the *currently selected* model, not just the default.
+  if (modelSel) {
+    modelSel.addEventListener('change', () => {
+      keyLabel.textContent = 'Checking…';
+      keyDot.classList.remove('ok', 'err');
+      modelBadge.classList.remove('ok', 'err');
+      fetch('/api/admin/ping?model=' + encodeURIComponent(modelSel.value))
+        .then((r) => r.json())
+        .then((j) => {
+          if (j.ok) {
+            modelBadge.classList.add('ok'); modelBadge.classList.remove('err');
+            keyDot.classList.add('ok'); keyDot.classList.remove('err');
+            keyLabel.textContent = `Model ready (${j.latencyMs}ms)`;
+          } else {
+            modelBadge.classList.add('err'); modelBadge.classList.remove('ok');
+            keyDot.classList.add('err'); keyDot.classList.remove('ok');
+            keyLabel.textContent = j.error || 'Model unreachable';
+            keyLabel.title = j.error || '';
+          }
+        })
+        .catch((e) => {
+          modelBadge.classList.add('err'); modelBadge.classList.remove('ok');
+          keyDot.classList.add('err'); keyDot.classList.remove('ok');
+          keyLabel.textContent = 'Ping failed: ' + (e?.message || e);
+        });
+    });
+  }
+
+  // ---------- git status indicator (polls /api/admin/publish) ----------
+  // Shows the user whether the local checkout is clean or has uncommitted
+  // / unpushed work, so they can be confident the Publish button will land.
+  const gitBadge = $('#git-badge');
+  const gitLabel = $('#git-label');
+  async function refreshGitStatus() {
+    if (!gitBadge || !gitLabel) return;
+    try {
+      const r = await fetch('/api/admin/publish');
+      const j = await r.json();
+      const s = j?.status || {};
+      if (!s.ok) {
+        gitBadge.classList.add('err'); gitBadge.classList.remove('ok');
+        gitLabel.textContent = s.message || 'not a git repo';
+        return;
+      }
+      gitBadge.classList.remove('err');
+      const parts = [];
+      if (s.uncommitted && s.uncommitted.length) parts.push(`${s.uncommitted.length} unsaved`);
+      if (s.ahead > 0) parts.push(`${s.ahead} ahead`);
+      if (s.behind > 0) parts.push(`${s.behind} behind`);
+      if (parts.length === 0) {
+        gitBadge.classList.add('ok');
+        gitLabel.textContent = `clean (${s.branch || 'main'})`;
+      } else {
+        gitBadge.classList.remove('ok');
+        gitLabel.textContent = `${parts.join(', ')} (${s.branch || 'main'})`;
+        gitLabel.title = s.uncommitted.join('\n');
+      }
+    } catch (e) {
+      gitBadge.classList.add('err'); gitBadge.classList.remove('ok');
+      gitLabel.textContent = 'git: offline';
+    }
+  }
+  refreshGitStatus();
+  // Refresh every 15s so the indicator stays current.
+  setInterval(refreshGitStatus, 15000);
+  // Refresh immediately after every tab switch (cheap, no harm).
+  $$('.admin-tab').forEach((b) => b.addEventListener('click', refreshGitStatus));
 
   // ---------- drag-and-drop images ----------
   const slots = { 1: null, 2: null };
@@ -174,13 +242,19 @@
       const old = suggestBtn.innerHTML;
       suggestBtn.innerHTML = '<span class="spinner"></span> Suggesting…';
       suggestBtn.disabled = true;
+      // 30s client-side cap. The server has its own 90s cap; we surface
+      // a friendlier error if the user is on a slow reasoning model.
+      const ac = new AbortController();
+      const t = setTimeout(() => ac.abort(), 30_000);
       try {
         const seed = topicEl.value.trim();
         const r = await fetch('/api/admin/suggest-topics', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ seed, model: modelSel.value }),
+          signal: ac.signal,
         });
+        clearTimeout(t);
         if (!r.ok) {
           const err = await r.json().catch(() => ({}));
           throw new Error(err.error || 'suggest failed');
@@ -212,7 +286,12 @@
         popover.style.maxWidth = Math.max(360, topicR.width) + 'px';
         document.body.appendChild(popover);
       } catch (e) {
-        toast(e.message || 'Suggest failed', 'err');
+        clearTimeout(t);
+        if (e?.name === 'AbortError') {
+          toast('Suggestion timed out (30s). Try a faster model like minimax/minimax-m2.7:free.', 'err');
+        } else {
+          toast(e.message || 'Suggest failed', 'err');
+        }
       } finally {
         suggestBtn.innerHTML = old;
         suggestBtn.disabled = false;
@@ -332,7 +411,39 @@
       });
       const j = await r.json();
       if (!r.ok || !j.ok) throw new Error(j.error || 'save failed');
-      toast(mode === 'publish' ? `Published: ${j.slug}` : `Saved draft: ${j.slug}`, 'ok');
+
+      // Local file is saved. For "publish" mode, also commit + push to GitHub
+      // so the deploy workflow picks it up. For "draft" mode, skip — drafts
+      // are local-only until you decide to publish them.
+      if (mode === 'publish') {
+        const files = [j.path || ('src/content/blog/' + j.slug + '.md')];
+        // Image files (if any). save.ts returns paths relative to /public,
+        // so we prepend "public/" to make them git-trackable.
+        const imgs = j.images || {};
+        const imgPaths = [imgs.image1, imgs.image2]
+          .filter(Boolean)
+          .map((p) => 'public/' + p.replace(/^\//, ''));
+        const allFiles = files.concat(imgPaths).filter(Boolean);
+
+        btn.innerHTML = '<span class="spinner"></span> Committing…';
+        const commitMsg = `chore(blog): ${currentPost.title}`;
+        const pubRes = await fetch('/api/admin/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ files: allFiles, message: commitMsg }),
+        });
+        const pubJson = await pubRes.json().catch(() => ({}));
+        if (pubRes.ok && pubJson.ok && pubJson.pushed) {
+          const sec = ((pubJson.durationMs || 0) / 1000).toFixed(1);
+          toast(`✓ Pushed in ${sec}s — Cloudflare Pages redeploy in ~30s`, 'ok', 5000);
+        } else if (pubRes.ok && pubJson.ok && pubJson.committedFiles && !pubJson.pushed) {
+          toast(`Committed locally (push skipped). Open a terminal to git push.`, 'warn', 5000);
+        } else {
+          toast(`Saved, but publish step failed: ${pubJson.error || 'unknown error'}`, 'err', 6000);
+        }
+      } else {
+        toast(`Saved draft: ${j.slug}`, 'ok');
+      }
     } catch (e) {
       toast(e.message || 'Save failed', 'err');
     } finally {

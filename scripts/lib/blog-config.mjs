@@ -22,7 +22,9 @@ export const OPENROUTER = {
   siteUrl: process.env.SITE_URL || 'https://dailytarot.example.com',
   siteName: 'Daily Tarot',
   // Keep the response cheap. Free models are rate-limited per minute.
-  maxTokens: 1400,
+  // 4000 leaves enough headroom for reasoning-capable models to both think
+  // and produce visible content.
+  maxTokens: 4000,
   temperature: 0.7,
   timeoutMs: 90_000,
 };

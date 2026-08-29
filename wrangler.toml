@@ -7,13 +7,14 @@ pages_build_output_dir = "./dist"
 # Then replace the id below with the returned id.
 [[kv_namespaces]]
 binding = "DAILY_TAROT_KV"
-id = "REPLACE_WITH_KV_ID"
+id = "7bb2b1b3129d4e8b8759ca3d0c75166a"
 
 # Public build-time environment variables. Visible to the function code.
 # Secrets (COOKIE_SECRET, OPENROUTER_DEFAULT_KEY) are set separately via
-#   npx wrangler secret put COOKIE_SECRET
-#   npx wrangler secret put OPENROUTER_DEFAULT_KEY
+#   npx wrangler pages secret put COOKIE_SECRET
+#   npx wrangler pages secret put OPENROUTER_DEFAULT_KEY
+# or in the Cloudflare Pages dashboard -> Settings -> Variables.
 [vars]
 SITE_URL = "https://dailytarot.example.com"
 READINGS_PAUSED = "false"
-OPENROUTER_MODEL = "nvidia/nemotron-3-5-lightning:free"
+OPENROUTER_MODEL = "nvidia/nemotron-3.5-lightning:free"
