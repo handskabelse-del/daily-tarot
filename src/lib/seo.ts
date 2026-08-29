@@ -73,7 +73,7 @@ export function websiteJsonLd() {
 export function articleJsonLd(input: { title: string; description: string; path: string; date: string }) {
   return {
     '@context': 'https://schema.org',
-    '@type': 'Article',
+    '@type': 'BlogPosting',
     headline: input.title,
     description: input.description,
     datePublished: input.date,
@@ -85,6 +85,25 @@ export function articleJsonLd(input: { title: string; description: string; path:
       url: SITE.url,
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE.url}${input.path}` },
+  };
+}
+
+export function blogJsonLd(input: {
+  path: string;
+  posts: Array<{ title: string; path: string; date: string; description?: string }>;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: `${SITE.name} — Blog`,
+    url: `${SITE.url}${input.path}`,
+    blogPost: input.posts.slice(0, 20).map((p) => ({
+      '@type': 'BlogPosting',
+      headline: p.title,
+      url: `${SITE.url}${p.path}`,
+      datePublished: p.date,
+      description: p.description,
+    })),
   };
 }
 

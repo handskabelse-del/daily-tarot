@@ -1,0 +1,163 @@
+---
+import '../../styles/admin.css';
+export const prerender = false;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Daily Tarot — Admin</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <div class="admin-shell">
+      <header class="admin-header">
+        <a class="brand" href="/admin">
+          <svg class="brand-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#b89cff" />
+                <stop offset="1" stop-color="#6ad6c9" />
+              </linearGradient>
+            </defs>
+            <circle cx="16" cy="16" r="14" stroke="url(#g)" stroke-width="1.5" />
+            <path d="M16 6 L20 14 L28 16 L20 18 L16 26 L12 18 L4 16 L12 14 Z" fill="url(#g)" />
+          </svg>
+          <span>Daily Tarot · Admin</span>
+        </a>
+        <nav class="admin-tabs" role="tablist">
+          <button class="admin-tab is-active" data-tab="new" role="tab">New post</button>
+          <button class="admin-tab" data-tab="browse" role="tab">Browse &amp; edit</button>
+          <button class="admin-tab" data-tab="settings" role="tab">Settings</button>
+        </nav>
+        <div class="admin-actions">
+          <span id="model-badge" class="admin-status-dot" title="OpenRouter status"></span>
+          <span style="font-size:0.8rem;color:var(--admin-fg-2)">local only</span>
+        </div>
+      </header>
+      <main class="admin-main">
+        <!-- ============== NEW POST ============== -->
+        <section id="tab-new" class="tab-pane is-active" role="tabpanel">
+          <div class="admin-main split" style="padding:0;max-width:none;margin:0">
+            <div class="admin-card">
+              <h2>New blog post</h2>
+              <div class="admin-row">
+                <label class="admin-label" for="topic">Topic</label>
+                <textarea id="topic" class="admin-textarea" placeholder="e.g. The Tower reversed in love readings" rows="2"></textarea>
+                <div class="admin-helper">
+                  <button id="suggest-btn" class="admin-btn ghost" type="button" style="padding:0.2rem 0.5rem;font-size:0.8rem">✨ Suggest 5 topics</button>
+                </div>
+              </div>
+              <div class="admin-row two-col">
+                <div>
+                  <label class="admin-label" for="category">Category</label>
+                  <select id="category" class="admin-select">
+                    <option>Card Meanings</option><option>Spreads</option><option>Daily Practice</option><option>Tarot for Life</option><option>Beginner</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="admin-label" for="model">Model</label>
+                  <select id="model" class="admin-select"></select>
+                </div>
+              </div>
+              <div class="admin-row two-col">
+                <div><label class="admin-label" for="primary">Primary keyword</label><input id="primary" class="admin-input" placeholder="Defaults to topic" /></div>
+                <div><label class="admin-label" for="secondary">Secondary keywords</label><input id="secondary" class="admin-input" placeholder="comma, separated, list" /></div>
+              </div>
+              <div class="admin-row two-col">
+                <div><label class="admin-label">Image 1 (lead)</label><div class="dropzone" id="dz1"><input type="file" accept="image/*" /><div class="dz-empty">Drag a JPG/PNG/WebP, or click to pick</div></div></div>
+                <div><label class="admin-label">Image 2 (illustration)</label><div class="dropzone" id="dz2"><input type="file" accept="image/*" /><div class="dz-empty">Drag a JPG/PNG/WebP, or click to pick</div></div></div>
+              </div>
+              <div class="admin-toolbar">
+                <button id="generate-btn" class="admin-btn primary" type="button">Generate post</button>
+                <button id="discard-btn" class="admin-btn ghost" type="button">Discard</button>
+                <span style="margin-left:auto;font-size:0.8rem;color:var(--admin-fg-2)"><span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> to generate</span>
+              </div>
+            </div>
+            <div>
+              <div class="admin-card" id="meta-card" style="display:none">
+                <h2 id="meta-title">Title</h2>
+                <p style="color:var(--admin-fg-1);font-style:italic" id="meta-description"></p>
+                <div class="validation" id="validation-stats"></div>
+                <div class="validation-errors" id="validation-errors" style="display:none"><strong>Issues:</strong><ul id="validation-errors-list"></ul></div>
+                <div class="admin-toolbar">
+                  <button id="save-draft-btn" class="admin-btn" type="button">Save as draft</button>
+                  <button id="publish-btn" class="admin-btn primary" type="button">Publish now</button>
+                  <button id="copy-md-btn" class="admin-btn ghost" type="button">Copy markdown</button>
+                  <span style="margin-left:auto;font-size:0.8rem;color:var(--admin-fg-2)" id="usage-line"></span>
+                </div>
+                <div class="adsense-slot-hint" id="adsense-hint" style="display:none"><span class="dot"></span><span>AdSense tip: place an ad between the 2nd and 3rd <code>##</code> section.</span></div>
+              </div>
+              <div class="preview-pane" id="preview" style="margin-top:1rem"><div class="empty">Click <strong>Generate post</strong> to see a live preview here.</div></div>
+            </div>
+          </div>
+        </section>
+        <!-- ============== BROWSE & EDIT ============== -->
+        <section id="tab-browse" class="tab-pane" role="tabpanel">
+          <div class="admin-card">
+            <h2>Posts</h2>
+            <div class="admin-toolbar">
+              <select id="filter" class="admin-select" style="max-width:180px">
+                <option value="all">All</option>
+                <option value="draft">Drafts</option>
+                <option value="published">Published</option>
+              </select>
+              <button id="refresh-list" class="admin-btn ghost" type="button">Refresh</button>
+              <span style="margin-left:auto;font-size:0.8rem;color:var(--admin-fg-2)" id="post-count"></span>
+            </div>
+            <div class="posts-list" id="posts-list"></div>
+          </div>
+          <div class="admin-card" id="editor-card" style="display:none;margin-top:1rem">
+            <h2>Editing: <span id="editor-slug" style="font-family:ui-monospace,monospace;font-size:0.9rem;color:var(--admin-fg-2)"></span></h2>
+            <div class="admin-row two-col">
+              <div><label class="admin-label">Title</label><input id="edit-title" class="admin-input" /></div>
+              <div><label class="admin-label">Category</label><select id="edit-category" class="admin-select"><option>Card Meanings</option><option>Spreads</option><option>Daily Practice</option><option>Tarot for Life</option><option>Beginner</option></select></div>
+            </div>
+            <div class="admin-row"><div><label class="admin-label">Description</label><input id="edit-description" class="admin-input" /></div></div>
+            <div class="admin-row"><div><label class="admin-label">Body (markdown)</label><textarea id="edit-body" class="admin-textarea" rows="18" style="font-family:ui-monospace,monospace;font-size:0.85rem"></textarea></div></div>
+            <div class="admin-toolbar">
+              <label style="display:inline-flex;align-items:center;gap:0.4rem;font-size:0.9rem"><input type="checkbox" id="edit-draft" /> Save as draft</label>
+              <button id="save-edit-btn" class="admin-btn primary" type="button">Save changes</button>
+              <button id="cancel-edit-btn" class="admin-btn ghost" type="button">Cancel</button>
+              <span style="margin-left:auto" id="edit-status"></span>
+            </div>
+          </div>
+        </section>
+        <!-- ============== SETTINGS ============== -->
+        <section id="tab-settings" class="tab-pane" role="tabpanel">
+          <div class="admin-card">
+            <h2>Local admin settings</h2>
+            <p style="color:var(--admin-fg-1)">
+              This admin lives at <code>http://localhost:4321/admin</code> when you run <code>npm run dev</code>. It writes directly to <code>src/content/blog/</code> and <code>public/assets/blog/</code> in your local checkout. The site is only updated once you <code>git add</code> + <code>git push</code> — the admin never pushes to GitHub.
+            </p>
+            <h2 style="margin-top:1.5rem">Environment</h2>
+            <div class="admin-row two-col">
+              <div>
+                <label class="admin-label">OpenRouter key</label>
+                <div style="display:flex;align-items:center;gap:0.5rem">
+                  <span class="admin-status-dot" id="key-dot"></span>
+                  <span id="key-label" style="font-size:0.9rem"></span>
+                </div>
+                <div class="admin-helper">Set <code>OPENROUTER_DEFAULT_KEY</code> in <code>.dev.vars</code>.</div>
+              </div>
+              <div>
+                <label class="admin-label">Default model</label>
+                <code>openrouter/auto</code>
+              </div>
+            </div>
+            <h2 style="margin-top:1.5rem">Keyboard shortcuts</h2>
+            <ul style="color:var(--admin-fg-1);line-height:1.9">
+              <li><span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> in the topic field — generate</li>
+              <li><span class="kbd">Esc</span> closes any open popover</li>
+              <li><span class="kbd">Ctrl</span>+<span class="kbd">S</span> in the editor — save changes</li>
+            </ul>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div id="toast-root" aria-live="polite"></div>
+    <script is:inline src="/admin.js"></script>
+  </body>
+</html>

@@ -1,0 +1,98 @@
+﻿name: New evergreen blog post
+
+# Triggered manually from the GitHub UI. Pass a topic and (optionally) the
+# paths of two images that already exist in the repo, or rely on the local
+# CLI (recommended). The existing `deploy.yml` redeploys Cloudflare Pages.
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Blog topic / primary keyword (required)'
+        required: true
+        type: string
+      category:
+        description: 'One of: Card Meanings, Spreads, Daily Practice, Tarot for Life, Beginner'
+        required: false
+        type: choice
+        options:
+          - Card Meanings
+          - Spreads
+          - Daily Practice
+          - Tarot for Life
+          - Beginner
+        default: 'Card Meanings'
+      primary:
+        description: 'Override primary SEO keyword (default = topic)'
+        required: false
+        type: string
+      secondary:
+        description: 'Comma-separated secondary keywords'
+        required: false
+        type: string
+        default: ''
+      image1:
+        description: 'First image path inside the repo (e.g. public/assets/blog/seed/01.jpg)'
+        required: false
+        type: string
+        default: ''
+      image2:
+        description: 'Second image path inside the repo'
+        required: false
+        type: string
+        default: ''
+      publish:
+        description: 'Skip draft mode and publish immediately'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: new-post
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate post
+        env:
+          OPENROUTER_DEFAULT_KEY: ${{ secrets.OPENROUTER_DEFAULT_KEY }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          GIT_AUTHOR_NAME: 'daily-tarot-bot'
+          GIT_AUTHOR_EMAIL: 'bot@dailytarot.local'
+        run: |
+          set -euo pipefail
+          ARGS="--commit --topic \"${{ inputs.topic }}\""
+          if [ -n "${{ inputs.category }}" ]; then ARGS="$ARGS --category \"${{ inputs.category }}\""; fi
+          if [ -n "${{ inputs.primary }}" ]; then ARGS="$ARGS --primary \"${{ inputs.primary }}\""; fi
+          if [ -n "${{ inputs.secondary }}" ]; then ARGS="$ARGS --secondary \"${{ inputs.secondary }}\""; fi
+          if [ -n "${{ inputs.image1 }}" ]; then ARGS="$ARGS --image1 \"${{ inputs.image1 }}\""; fi
+          if [ -n "${{ inputs.image2 }}" ]; then ARGS="$ARGS --image2 \"${{ inputs.image2 }}\""; fi
+          if [ "${{ inputs.publish }}" = "true" ]; then ARGS="$ARGS --publish"; fi
+          node scripts/new-post.mjs $ARGS
+
+      - name: Push if anything new
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git push
+          else
+            echo "Nothing to push."
+          fi

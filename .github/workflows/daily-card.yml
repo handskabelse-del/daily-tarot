@@ -1,0 +1,67 @@
+﻿name: Daily Card of the Day post
+
+# Runs once a day at 00:05 UTC, then commits any new post to main.
+# The existing `deploy.yml` workflow then redeploys Cloudflare Pages.
+
+on:
+  schedule:
+    # 00:05 UTC every day
+    - cron: '5 0 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Override the date (YYYY-MM-DD). Defaults to today UTC.'
+        required: false
+        type: string
+      publish:
+        description: 'Skip draft mode for this run.'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: daily-card
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # We need full history for the commit/push step; depth: 0 is fine.
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate daily card post
+        env:
+          OPENROUTER_DEFAULT_KEY: ${{ secrets.OPENROUTER_DEFAULT_KEY }}
+          SITE_URL: ${{ vars.SITE_URL }}
+          GIT_AUTHOR_NAME: 'daily-tarot-bot'
+          GIT_AUTHOR_EMAIL: 'bot@dailytarot.local'
+        run: |
+          set -euo pipefail
+          ARGS="--commit"
+          if [ -n "${{ inputs.date }}" ]; then ARGS="$ARGS --date ${{ inputs.date }}"; fi
+          if [ "${{ inputs.publish }}" = "true" ]; then ARGS="$ARGS --publish"; fi
+          node scripts/daily-card.mjs $ARGS
+
+      - name: Push if anything new
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git push
+          else
+            echo "Nothing to push."
+          fi

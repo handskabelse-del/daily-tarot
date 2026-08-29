@@ -1,15 +1,33 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
+import { breadcrumbJsonLd, blogJsonLd } from '../../lib/seo';
 
 const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );
+
+const jsonLd = [
+  breadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: 'Blog', path: '/blog' },
+  ]),
+  blogJsonLd({
+    path: '/blog',
+    posts: posts.map((p) => ({
+      title: p.data.title,
+      path: `/blog/${p.slug}`,
+      date: p.data.date.toISOString(),
+      description: p.data.description,
+    })),
+  }),
+];
 ---
 <BaseLayout
   title="Tarot Blog — Daily Insights, Spreads, and Card Meanings"
   description="Articles on tarot card meanings, spreads, daily practice, and intuition. Updated weekly."
   path="/blog"
+  jsonLd={jsonLd}
 >
   <article class="prose">
     <h1>Tarot Blog</h1>
