@@ -1,0 +1,25 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Page not found — Daily Tarot"
+  description="The page you are looking for could not be found. Return to the daily reading or browse tarot card meanings."
+  path="/404"
+  noindex
+>
+  <section class="prose" style="text-align:center;padding:3rem 1rem">
+    <p style="color:var(--accent-2);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem">404</p>
+    <h1>This card is face down.</h1>
+    <p style="font-size:1.1rem">
+      The page you were looking for has wandered off. The deck is still here — try one of the doors below.
+    </p>
+    <p style="margin-top:1.5rem;display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap">
+      <a class="btn" href="/">Draw today's reading</a>
+      <a class="btn btn-secondary" href="/card-of-the-day">Card of the day</a>
+      <a class="btn btn-secondary" href="/tarot-card-meanings">All card meanings</a>
+    </p>
+    <p style="margin-top:2rem">
+      <a href="/sitemap-index.xml">Sitemap</a> · <a href="/blog">Blog</a> · <a href="/">Home</a>
+    </p>
+  </section>
+</BaseLayout>

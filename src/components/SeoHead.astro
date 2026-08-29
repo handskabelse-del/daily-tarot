@@ -8,13 +8,16 @@ export interface Props {
   image?: string;
   noindex?: boolean;
   jsonLd?: object | object[];
+  availableLocales?: Array<'en' | 'es' | 'fr'>;
 }
 
 import { buildMeta, buildHreflangs } from '../lib/seo';
+import { LOCALES } from '../lib/i18n';
 
-const { title, description, path = Astro.url.pathname, locale = 'en', type, image, noindex, jsonLd } = Astro.props;
+const { title, description, path = Astro.url.pathname, locale = 'en', type, image, noindex, jsonLd, availableLocales } = Astro.props;
 const meta = buildMeta({ title, description, path, locale, type, image, noindex });
-const hreflangs = buildHreflangs(path);
+const localesForHreflang = (availableLocales && availableLocales.length > 0 ? availableLocales : (['en', 'es', 'fr'] as Array<'en' | 'es' | 'fr'>)) as Array<'en' | 'es' | 'fr'>;
+const hreflangs = buildHreflangs(path, localesForHreflang);
 const jsonLdArray = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 
 const ogEntries: Array<[string, string]> = [];

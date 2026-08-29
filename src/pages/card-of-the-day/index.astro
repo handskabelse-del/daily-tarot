@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { deterministicDrawForDate } from '../../lib/draw';
 import { cardSuitSymbol } from '../../lib/cards';
+import { breadcrumbJsonLd } from '../../lib/seo';
 
 const today = new Date();
 const yyyy = today.getUTCFullYear();
@@ -13,11 +14,16 @@ const card = draw[0];
 const description = `Today's card is ${card.card.name} (${card.orientation}). Keywords: ${card.card.keywords.join(', ')}.`;
 const path = '/card-of-the-day';
 const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+const jsonLd = breadcrumbJsonLd([
+  { name: 'Home', path: '/' },
+  { name: 'Card of the Day', path },
+]);
 ---
 <BaseLayout
   title={`Card of the Day — ${card.card.name} (${dateLabel})`}
   description={description}
   path={path}
+  jsonLd={jsonLd}
 >
   <article class="prose" style="text-align:center">
     <p style="color:var(--accent-2);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem">

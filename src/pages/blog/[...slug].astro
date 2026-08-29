@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
-import { articleJsonLd } from '../../lib/seo';
+import { articleJsonLd, breadcrumbJsonLd } from '../../lib/seo';
 
 export async function getStaticPaths() {
   const posts = await getCollection('blog', ({ data }) => !data.draft);
@@ -15,12 +15,19 @@ const { post } = Astro.props;
 const { Content } = await post.render();
 const path = `/blog/${post.slug}`;
 const dateStr = post.data.date.toISOString();
-const jsonLd = articleJsonLd({
-  title: post.data.title,
-  description: post.data.description,
-  path,
-  date: dateStr,
-});
+const jsonLd = [
+  articleJsonLd({
+    title: post.data.title,
+    description: post.data.description,
+    path,
+    date: dateStr,
+  }),
+  breadcrumbJsonLd([
+    { name: 'Home', path: '/' },
+    { name: 'Blog', path: '/blog' },
+    { name: post.data.title, path },
+  ]),
+];
 ---
 <BaseLayout
   title={`${post.data.title} — Daily Tarot`}

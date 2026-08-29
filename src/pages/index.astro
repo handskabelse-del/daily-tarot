@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ReadingTool from '../components/ReadingTool.astro';
-import { faqJsonLd, websiteJsonLd } from '../lib/seo';
+import { faqJsonLd, websiteJsonLd, webApplicationJsonLd } from '../lib/seo';
 const faqs = [
   {
     question: 'How does the daily tarot reading work?',
@@ -29,13 +29,13 @@ const faqs = [
       'Yes. Daily Tarot is for entertainment and self-reflection only. It is not medical, legal, or financial advice.',
   },
 ];
-const jsonLd = faqJsonLd(faqs);
+const jsonLd = [faqJsonLd(faqs), webApplicationJsonLd()];
 ---
 <BaseLayout
   title="Free Daily Tarot Reading — 9 Cards, Personal Interpretation"
   description="Get a free daily tarot reading with 9 cards. Draw your cards and receive a personal AI-generated interpretation. Refresh your perspective in under a minute."
   path="/"
-  jsonLd={[websiteJsonLd(), jsonLd]}
+  jsonLd={[websiteJsonLd(), ...jsonLd]}
 >
   <ReadingTool locale="en" />
 

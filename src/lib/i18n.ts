@@ -24,8 +24,7 @@ type Dict = {
   remainingLabel: (n: number) => string;
   lockedTitle: string;
   lockedSubtitle: string;
-  acceptKeyPrompt: string;
-  acceptKeyLabel: string;
+  lockedCta: string;
   reading: string;
   advice: string;
   enterKeyTitle: string;
@@ -38,14 +37,13 @@ const dicts: Record<Locale, Dict> = {
     heroSubtitle:
       'Draw nine cards and receive a personal interpretation. Refresh your perspective in under a minute.',
     ctaGetReading: 'Get my reading',
-    ctaReject: 'Reject & draw again',
-    ctaAccept: 'Accept this reading',
+    ctaReject: 'Give me another',
+    ctaAccept: 'I accept',
     ctaShare: 'Share',
     remainingLabel: (n) => `Rejections remaining: ${n}/2`,
     lockedTitle: 'Your daily reading is set',
     lockedSubtitle: 'Come back tomorrow for a fresh perspective. The cards will be waiting.',
-    acceptKeyPrompt: 'Want to keep this reading?',
-    acceptKeyLabel: 'Save it',
+    lockedCta: 'Come back tomorrow',
     reading: 'Reading',
     advice: 'Guidance',
     enterKeyTitle: 'OpenRouter API key required',
@@ -57,14 +55,13 @@ const dicts: Record<Locale, Dict> = {
     heroSubtitle:
       'Saca nueve cartas y recibe una interpretación personal. Renueva tu perspectiva en menos de un minuto.',
     ctaGetReading: 'Recibir mi lectura',
-    ctaReject: 'Rechazar y sacar de nuevo',
-    ctaAccept: 'Aceptar esta lectura',
+    ctaReject: 'Dame otra',
+    ctaAccept: 'Acepto',
     ctaShare: 'Compartir',
     remainingLabel: (n) => `Rechazos restantes: ${n}/2`,
     lockedTitle: 'Tu lectura diaria está lista',
     lockedSubtitle: 'Vuelve mañana para una nueva perspectiva. Las cartas te esperarán.',
-    acceptKeyPrompt: '¿Quieres guardar esta lectura?',
-    acceptKeyLabel: 'Guardar',
+    lockedCta: 'Vuelve mañana',
     reading: 'Lectura',
     advice: 'Consejo',
     enterKeyTitle: 'Se requiere clave de OpenRouter',
@@ -76,14 +73,13 @@ const dicts: Record<Locale, Dict> = {
     heroSubtitle:
       'Tirez neuf cartes et recevez une interprétation personnelle. Renouvelez votre perspective en moins d’une minute.',
     ctaGetReading: 'Recevoir mon tirage',
-    ctaReject: 'Refuser et retirer',
-    ctaAccept: 'Accepter ce tirage',
+    ctaReject: 'Donnez-m’en un autre',
+    ctaAccept: 'J’accepte',
     ctaShare: 'Partager',
     remainingLabel: (n) => `Refus restants : ${n}/2`,
     lockedTitle: 'Votre tirage du jour est prêt',
     lockedSubtitle: 'Revenez demain pour une nouvelle perspective. Les cartes vous attendront.',
-    acceptKeyPrompt: 'Voulez-vous garder ce tirage ?',
-    acceptKeyLabel: 'Enregistrer',
+    lockedCta: 'Revenez demain',
     reading: 'Tirage',
     advice: 'Conseil',
     enterKeyTitle: 'Clé API OpenRouter requise',

@@ -13,13 +13,15 @@ import {
   corsHeaders,
   type PagesFunction,
 } from './_shared';
-import { drawNine } from '../../src/lib/draw';
-import { SYSTEM_PROMPT, buildUserPrompt, parseReadingJson, fallbackReading, type ReadingJson } from '../../src/lib/prompts';
+import { drawNine, POSITIONS } from '../../src/lib/draw';
+import { getSystemPrompt, buildUserPrompt, parseReadingJson, fallbackReading, type ReadingJson } from '../../src/lib/prompts';
 
 type Body = {
   openrouterKey?: string;
   question?: string;
-  action?: 'draw' | 'reject';
+  action?: 'draw' | 'reject' | 'accept';
+  locale?: string;
+  cardFingerprint?: string;
 };
 
 const MAX_KEY_LEN = 256;
@@ -47,10 +49,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         const parsed = JSON.parse(raw) as Body;
         body = parsed && typeof parsed === 'object' ? parsed : {};
       } catch {
-        // If body is unparseable, fall back to query param (avoids the empty-body parse path)
         const url = new URL(context.request.url);
         const qAction = url.searchParams.get('action');
-        if (qAction === 'draw' || qAction === 'reject') {
+        if (qAction === 'draw' || qAction === 'reject' || qAction === 'accept') {
           body = { action: qAction };
         }
         if (!body.action) {
@@ -58,10 +59,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         }
       }
     } else {
-      // No body sent — read action from query string (?action=draw|reject)
       const url = new URL(context.request.url);
       const qAction = url.searchParams.get('action');
-      if (qAction === 'draw' || qAction === 'reject') {
+      if (qAction === 'draw' || qAction === 'reject' || qAction === 'accept') {
         body = { action: qAction };
       }
     }
@@ -78,6 +78,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const activeKey = serverKey || userKey;
   const keySource: 'server' | 'user' | 'none' = serverKey ? 'server' : userKey ? 'user' : 'none';
   const question = (body.question || '').slice(0, MAX_QUESTION_LEN);
+  const locale = (body.locale || 'en').toString().slice(0, 5);
   const url = new URL(context.request.url);
   const useFallback = url.searchParams.get('fallback') === '1';
 
@@ -91,24 +92,60 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const state = await readLimit(env, uid);
 
-  if (body.action === 'reject' && state.rejections >= 2) {
+  // ---- Guards ----
+  // Reject path: only allowed if the user has < 2 rejects and hasn't accepted.
+  if (body.action === 'reject' && (state.rejections >= 2 || state.accepted)) {
     const res = json(
-      { error: 'Daily rejection limit reached', resetAtIso: nextUtcMidnightIso() },
+      { error: 'Daily limit reached', resetAtIso: nextUtcMidnightIso(), accepted: state.accepted },
       { status: 429, headers: corsHeaders(origin) },
     );
     if (setCookieHeader) res.headers.append('set-cookie', setCookieHeader);
     return res;
   }
 
+  // Accept path: just record the fingerprint, no draw.
+  if (body.action === 'accept') {
+    state.accepted = true;
+    state.acceptedFingerprint = (body.cardFingerprint || '').slice(0, 128);
+    state.day = todayUtc();
+    await writeLimit(env, uid, state);
+    const res = json(
+      { ok: true, remaining: Math.max(0, 2 - state.rejections), resetAtIso: nextUtcMidnightIso() },
+      { headers: corsHeaders(origin) },
+    );
+    if (setCookieHeader) res.headers.append('set-cookie', setCookieHeader);
+    return res;
+  }
+
+  // Draw path: blocked once the user has accepted, OR has used both rejects.
+  if (body.action !== 'reject') {
+    if (state.accepted) {
+      const res = json(
+        { error: 'Reading already accepted for today', resetAtIso: nextUtcMidnightIso() },
+        { status: 429, headers: corsHeaders(origin) },
+      );
+      if (setCookieHeader) res.headers.append('set-cookie', setCookieHeader);
+      return res;
+    }
+    if (state.rejections >= 2) {
+      const res = json(
+        { error: 'Daily rejection limit reached', resetAtIso: nextUtcMidnightIso() },
+        { status: 429, headers: corsHeaders(origin) },
+      );
+      if (setCookieHeader) res.headers.append('set-cookie', setCookieHeader);
+      return res;
+    }
+  }
+
   const cards = drawNine();
   let reading: ReadingJson;
   let usedFallback = false;
   if (useFallback || !activeKey) {
-    reading = fallbackReading(cards);
+    reading = fallbackReading(cards, locale);
     usedFallback = true;
   } else {
     try {
-      reading = await callOpenRouter(env, activeKey, cards, question);
+      reading = await callOpenRouter(env, activeKey, cards, question, locale);
     } catch (e: any) {
       const msg = String(e?.message || '');
       if (/invalid|auth|key|401|403/.test(msg)) {
@@ -119,10 +156,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         if (setCookieHeader) res.headers.append('set-cookie', setCookieHeader);
         return res;
       }
-      reading = fallbackReading(cards);
+      reading = fallbackReading(cards, locale);
       usedFallback = true;
     }
   }
+
+  // Remap the returned position names back to canonical English keys so the
+  // client can match them against the cards' `position.name`. Localized text
+  // stays in the chosen language; only the position key is normalized.
+  const canonicalByIndex: Record<number, string> = {};
+  for (const p of POSITIONS) canonicalByIndex[p.index] = p.name;
+  reading.positionInterpretations = reading.positionInterpretations.map((pi) => {
+    const card = cards.find((c) => c.position.name === pi.position || c.position.index === Number(pi.position));
+    if (card) return { ...pi, position: card.position.name };
+    const idx = Number(pi.position);
+    if (canonicalByIndex[idx]) return { ...pi, position: canonicalByIndex[idx] };
+    return pi;
+  });
 
   if (body.action === 'reject') {
     state.rejections += 1;
@@ -143,6 +193,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })),
       reading,
       remaining: Math.max(0, 2 - state.rejections),
+      accepted: state.accepted,
       resetAtIso: nextUtcMidnightIso(),
       usedFallback,
       keySource,
@@ -155,7 +206,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
 export const onRequestOptions: PagesFunction<Env> = async ({ request }) => handleOptions(request);
 
-async function callOpenRouter(env: Env, key: string, cards: ReturnType<typeof drawNine>, question: string): Promise<ReadingJson> {
+async function callOpenRouter(env: Env, key: string, cards: ReturnType<typeof drawNine>, question: string, locale: string): Promise<ReadingJson> {
   const model = env.OPENROUTER_MODEL || 'nvidia/nemotron-3-5-lightning:free';
   const referer = env.SITE_URL || 'https://dailytarot.example.com';
   const controller = new AbortController();
@@ -176,11 +227,11 @@ async function callOpenRouter(env: Env, key: string, cards: ReturnType<typeof dr
         // honor json_object. We instruct the model to return only JSON via the
         // system prompt, and parse defensively on the server.
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: buildUserPrompt(cards, question) },
+          { role: 'system', content: getSystemPrompt(locale) },
+          { role: 'user', content: buildUserPrompt(cards, question, locale) },
         ],
         temperature: 0.9,
-        max_tokens: 1400,
+        max_tokens: 1800,
         stream: false,
       }),
       signal: controller.signal,

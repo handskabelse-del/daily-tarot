@@ -24,6 +24,10 @@ export type LimitState = {
   day: string;
   rejections: number;
   lastDrawAt: number;
+  accepted: boolean;
+  // A short fingerprint of the cards the user last accepted (e.g. first 3 card ids joined).
+  // Used to make a "draw again with the same cards" request cheap to detect.
+  acceptedFingerprint: string;
 };
 
 export function todayUtc(): string {
@@ -97,14 +101,20 @@ export async function verifySignedUid(secret: string, value: string | null): Pro
 export async function readLimit(env: Env, uid: string): Promise<LimitState> {
   const key = `limit:${uid}`;
   const raw = env.DAILY_TAROT_KV ? await env.DAILY_TAROT_KV.get(key) : null;
-  const day = todayUtc();
-  if (!raw) return { day, rejections: 0, lastDrawAt: 0 };
+  const empty: LimitState = { day: todayUtc(), rejections: 0, lastDrawAt: 0, accepted: false, acceptedFingerprint: '' };
+  if (!raw) return empty;
   try {
-    const parsed = JSON.parse(raw) as LimitState;
-    if (parsed.day !== day) return { day, rejections: 0, lastDrawAt: 0 };
-    return parsed;
+    const parsed = JSON.parse(raw) as Partial<LimitState>;
+    if (parsed.day !== todayUtc()) return empty;
+    return {
+      day: todayUtc(),
+      rejections: Number(parsed.rejections) || 0,
+      lastDrawAt: Number(parsed.lastDrawAt) || 0,
+      accepted: Boolean(parsed.accepted),
+      acceptedFingerprint: typeof parsed.acceptedFingerprint === 'string' ? parsed.acceptedFingerprint : '',
+    };
   } catch {
-    return { day, rejections: 0, lastDrawAt: 0 };
+    return empty;
   }
 }
 

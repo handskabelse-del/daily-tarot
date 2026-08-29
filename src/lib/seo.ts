@@ -15,7 +15,7 @@ export function buildMeta(input: SeoInput) {
   const description = input.description || SITE.description;
   const url = `${SITE.url}${input.path || '/'}`;
   const locale = input.locale || 'en';
-  const image = input.image || '/og/default.svg';
+  const image = input.image || '/og/default.png';
   const type = input.type || 'website';
 
   return {
@@ -41,14 +41,22 @@ export function buildMeta(input: SeoInput) {
   };
 }
 
-export function buildHreflangs(path: string): Array<{ hreflang: string; href: string }> {
+export function buildHreflangs(
+  path: string,
+  availableLocales: Array<'en' | 'es' | 'fr'> = ['en', 'es', 'fr'],
+): Array<{ hreflang: string; href: string }> {
   const clean = path.startsWith('/') ? path : `/${path}`;
-  return [
-    { hreflang: 'en-US', href: `${SITE.url}${clean === '/' ? '/' : clean}` },
-    { hreflang: 'es-ES', href: `${SITE.url}/es${clean === '/' ? '/' : clean}` },
-    { hreflang: 'fr-FR', href: `${SITE.url}/fr${clean === '/' ? '/' : clean}` },
-    { hreflang: 'x-default', href: `${SITE.url}${clean === '/' ? '/' : clean}` },
-  ];
+  const tail = clean === '/' ? '/' : clean;
+  const out: Array<{ hreflang: string; href: string }> = [];
+  for (const loc of availableLocales) {
+    const prefix = loc === 'en' ? '' : `/${loc}`;
+    out.push({
+      hreflang: LOCALES[loc].hreflang,
+      href: `${SITE.url}${prefix}${tail}`,
+    });
+  }
+  out.push({ hreflang: 'x-default', href: `${SITE.url}${tail}` });
+  return out;
 }
 
 export function websiteJsonLd() {
@@ -89,5 +97,38 @@ export function faqJsonLd(faqs: Array<{ question: string; answer: string }>) {
       name: f.question,
       acceptedAnswer: { '@type': 'Answer', text: f.answer },
     })),
+  };
+}
+
+export function breadcrumbJsonLd(
+  items: Array<{ name: string; path: string }>,
+) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: item.name,
+      item: `${SITE.url}${item.path}`,
+    })),
+  };
+}
+
+export function webApplicationJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: SITE.name,
+    url: SITE.url,
+    description: SITE.description,
+    applicationCategory: 'LifestyleApplication',
+    operatingSystem: 'Any',
+    inLanguage: ['en-US', 'es-ES', 'fr-FR'],
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
   };
 }

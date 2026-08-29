@@ -27,6 +27,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const remaining = Math.max(0, 2 - state.rejections);
   const res = json({
     remaining,
+    accepted: state.accepted,
     day: state.day,
     resetAtIso: nextUtcMidnightIso(),
   }, { headers: { ...corsHeaders(context.request.headers.get('origin')) } });
