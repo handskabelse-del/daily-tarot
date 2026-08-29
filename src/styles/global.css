@@ -701,9 +701,14 @@ p {
 }
 
 .stage[data-state="reading"] .stage-cards,
-.stage[data-state="locked"] .stage-cards,
-.stage[data-state="accepted"] .stage-cards {
+.stage[data-state="locked"] .stage-cards {
   display: none;
+}
+
+/* Accepted state: keep the flipped cards visible so the user can see what
+   they accepted; the Saved confirmation sits below the cards. */
+.stage[data-state="accepted"] .stage-cards {
+  min-height: auto;
 }
 
 .stage-cards > [data-state-panel] {
@@ -796,6 +801,14 @@ p {
 
 .cta-wrap .card-grid-shell {
   margin-top: 0.25rem;
+}
+
+/* Accepted state: the cards stay visible inside .cta-wrap, but the "Get a
+   reading" button and the disclaimer below them should not show. */
+.stage[data-state="accepted"] .cta-wrap .controls,
+.stage[data-state="accepted"] .cta-wrap .disclaimer,
+.stage[data-state="accepted"] .cta-wrap .hero-title {
+  display: none;
 }
 
 .hero-title {
@@ -892,6 +905,13 @@ p {
   justify-content: center;
   text-align: center;
   padding: 1rem;
+  grid-area: reading;       /* sit in the same column as the reading panel */
+  grid-row: 2;              /* below the (now-visible) cards */
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.stage[data-state="accepted"] .stage-accepted {
+  opacity: 1;
 }
 
 .accepted-bubble {
@@ -917,6 +937,33 @@ p {
   color: var(--fg-1);
   font-style: italic;
   line-height: 1.5;
+}
+
+.accepted-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(184, 156, 255, 0.18);
+  width: 100%;
+}
+
+.accepted-countdown .lbl {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  font-style: normal;
+}
+
+.accepted-countdown .num {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
 }
 
 .modal {

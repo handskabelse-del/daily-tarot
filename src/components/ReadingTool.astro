@@ -77,6 +77,10 @@ const dict = t(locale);
       <div class="accepted-bubble">
         <h2>Saved.</h2>
         <p>Carry this reading gently today. Come back tomorrow for a fresh draw.</p>
+        <div class="accepted-countdown">
+          <span class="lbl">Tomorrow's draw in</span>
+          <span class="num" id="accepted-countdown">00:00:00</span>
+        </div>
       </div>
     </div>
   </div>
@@ -156,7 +160,11 @@ const dict = t(locale);
 
     function setState(s: State) {
       stage.dataset.state = s;
-      introPanel.hidden = s !== 'intro';
+      // The intro panel contains the card grid. Once we've drawn, paintCards()
+      // replaces its static card backs with the real flipped cards, so the
+      // panel needs to stay visible in the accepted state too — only the
+      // "Get a reading" button inside it gets hidden via CSS.
+      introPanel.hidden = s !== 'intro' && s !== 'accepted';
       loadingPanel.hidden = s !== 'loading';
       readingPanel.hidden = s !== 'reading';
       actionsPanel.hidden = s !== 'reading';
@@ -317,7 +325,9 @@ const dict = t(locale);
       if (stage.dataset.state !== 'intro') {
         return;
       }
-      if (currentReading || readSavedReading()) {
+      // Block only when the user has EXPLICITLY accepted a reading today.
+      // A user who drew but didn't accept can still use a rejection.
+      if (hasAcceptedToday()) {
         return;
       }
       const ok = await refreshLimit();
@@ -394,6 +404,7 @@ const dict = t(locale);
     acceptBtn.addEventListener('click', async () => {
       if (!currentReading) return;
       if (currentReading) saveToLocal(currentReading);
+      markAcceptedToday();
       // Mark accepted server-side so any subsequent draw attempt is rejected.
       try {
         await api('/api/reading?action=accept', {
@@ -407,7 +418,34 @@ const dict = t(locale);
         // Even if the server-side call fails, the client still remembers the accept.
       }
       setState('accepted');
+      startAcceptedCountdown();
     });
+
+    // Live countdown to UTC midnight, then auto-reload so the user wakes
+    // up to a fresh draw button. The tick is a no-op once the page reloads.
+    let acceptedTimer: number | null = null;
+    function startAcceptedCountdown() {
+      // Compute next UTC midnight (server's "today" rolls over at UTC, not local).
+      const now = new Date();
+      const next = new Date(Date.UTC(
+        now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0,
+      ));
+      const pad = (n: number) => String(Math.max(0, n)).padStart(2, '0');
+      const tick = () => {
+        const diff = next.getTime() - Date.now();
+        const h = pad(Math.floor(diff / 3600000));
+        const m = pad(Math.floor((diff % 3600000) / 60000));
+        const s = pad(Math.floor((diff % 60000) / 1000));
+        const el = document.getElementById('accepted-countdown');
+        if (el) el.textContent = `${h}:${m}:${s}`;
+        if (diff <= 0) {
+          if (acceptedTimer) window.clearInterval(acceptedTimer);
+          location.reload();
+        }
+      };
+      tick();
+      acceptedTimer = window.setInterval(tick, 1000);
+    }
 
     function saveToLocal(data: { cards: DrawCard[]; reading: Reading }) {
       try {
@@ -431,8 +469,43 @@ const dict = t(locale);
       }
     }
 
+    // The user has EXPLICITLY accepted a reading today — locks the stage
+    // until tomorrow so they can't burn another reject on something they
+    // already saved. Distinct from `readSavedReading`, which only means
+    // "we drew cards" (the user can still reject and re-draw in that case).
+    function hasAcceptedToday(): boolean {
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        return localStorage.getItem(`dt_accepted_${today}`) === '1';
+      } catch {
+        return false;
+      }
+    }
+
+    function markAcceptedToday() {
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        localStorage.setItem(`dt_accepted_${today}`, '1');
+      } catch (_) {}
+    }
+
     (function restoreOrLock() {
-      // Block the intro if the user has already accepted a reading today.
+      // If the user accepted a reading today, go straight to the Accepted
+      // state with the live countdown. No "draw again" path from here.
+      if (hasAcceptedToday()) {
+        const saved = readSavedReading();
+        if (saved) {
+          currentReading = saved;
+          paintCards(saved.cards);
+        }
+        // Cards flip immediately on restore (no stagger) so the user sees
+        // the spread they accepted, then the Saved panel slides in below.
+        flipCards(false);
+        setState('accepted');
+        startAcceptedCountdown();
+        return;
+      }
+      // Otherwise: if there's a drawn-but-not-accepted reading, restore it.
       refreshLimit()
         .then((ok) => {
           if (!ok) return;
