@@ -13,6 +13,7 @@ export interface Props {
 import '../styles/global.css';
 import SeoHead from '../components/SeoHead.astro';
 import MobileMenu from '../components/MobileMenu.astro';
+import MobileMenuButton from '../components/MobileMenuButton.astro';
 import ConsentBanner from '../components/ConsentBanner.astro';
 import { websiteJsonLd } from '../lib/seo';
 const { title, description, path, locale, type, image, noindex, jsonLd, availableLocales } = Astro.props;
@@ -79,9 +80,12 @@ const gaId = import.meta.env.PUBLIC_GA_ID;
           <a href="/es/">ES</a>
           <a href="/fr/">FR</a>
         </nav>
-        <MobileMenu />
+        <MobileMenuButton />
       </div>
     </header>
+    <!-- Drawer + backdrop live at body level so they don't get trapped
+         inside the header's z-index stacking context. -->
+    <MobileMenu />
     <main id="main" class="container">
       <slot />
     </main>

@@ -93,21 +93,7 @@ p {
   background: rgba(7, 7, 13, 0.85);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  /* No z-index here on purpose: the mobile-nav (rendered as a sibling via
-     <MobileMenu />) needs to escape the header's stacking context to
-     appear above the consent banner. A high z-index here would create a
-     stacking context that traps the mobile-nav at z-index:100 within it,
-     which still places it BELOW the consent-banner's z-index:80 when
-     both are children of <body>. Removing the header's z-index lets the
-     mobile-nav compete directly with body-level stacking. The header
-     itself still paints at the top because it's at the top of the DOM. */
-  z-index: 0;
-}
-.site-header .menu-toggle {
-  /* Lift the button above the sticky header's own background, so it
-     doesn't get visually clipped. */
-  position: relative;
-  z-index: 2;
+  z-index: 50;
 }
 
 .site-header .container {
@@ -1127,9 +1113,12 @@ p {
 @media (max-width: 880px) {
   .stage {
     grid-template-columns: 1fr;
+    /* Mobile order: cards (with "Get my reading" CTA) first, then the
+       witch avatar, then the reading area. The desktop keeps avatar on
+       the left and reading on the right. */
     grid-template-areas:
-      "avatar"
       "cards"
+      "avatar"
       "reading"
       "actions";
     gap: 1rem;
@@ -1137,11 +1126,11 @@ p {
     padding-top: 1rem;
   }
   .stage-avatar {
-    /* On phones the witch image was 562px tall (375*1.5 from aspect-ratio:2/3),
-       which left a huge empty space below the cards. Cap it tighter and
-       shorten the aspect ratio so the visual height is ~250px. */
-    max-height: 260px;
-    aspect-ratio: 5 / 3;
+    /* On phones the witch image was 562px tall (375*1.5 from aspect-ratio:2/3).
+       Keep it visually prominent but slightly shorter than the desktop
+       value, so it doesn't dominate the viewport. */
+    max-height: 380px;
+    aspect-ratio: 3 / 4;
   }
   .stage[data-state="reading"] .stage-avatar,
   .stage[data-state="loading"] .stage-avatar {
@@ -1237,9 +1226,6 @@ p {
   background: var(--bg-2);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 1rem;
-  /* z-index 50 puts the banner BELOW the mobile-nav (z-index 210) so the
-     mobile drawer always wins. It used to be 80, which trapped the
-     mobile-nav behind it. */
   z-index: 50;
   display: flex;
   flex-wrap: wrap;
@@ -1247,18 +1233,6 @@ p {
   align-items: center;
   justify-content: space-between;
   font-size: 0.9rem;
-}
-
-/* When the consent banner is visible, push page content up so the
-   "Get my reading" button (which sits at the bottom of the intro panel)
-   isn't hidden under the fixed banner. The .consent-banner-active class
-   is added to <body> by the banner's own script when the banner is shown
-   and removed once the user accepts/rejects. */
-body.consent-banner-active .stage .cta-wrap {
-  padding-bottom: 7rem;
-}
-body.consent-banner-active main {
-  padding-bottom: 7rem;
 }
 
 .consent-banner p {

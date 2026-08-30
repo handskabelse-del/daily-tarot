@@ -1,0 +1,21 @@
+---
+// Just the hamburger button. Lives inside the .site-header.
+// The full drawer + backdrop live in <MobileMenu /> at body level,
+// outside the header, so they don't get trapped in the header's
+// z-index stacking context (which was breaking the sticky header
+// and the drawer's full-viewport coverage).
+---
+<button
+  class="menu-toggle"
+  type="button"
+  aria-label="Open menu"
+  aria-expanded="false"
+  aria-controls="mobile-nav"
+  data-menu-toggle
+>
+  <span class="menu-toggle-icon" aria-hidden="true">
+    <span class="bar bar-1"></span>
+    <span class="bar bar-2"></span>
+    <span class="bar bar-3"></span>
+  </span>
+</button>

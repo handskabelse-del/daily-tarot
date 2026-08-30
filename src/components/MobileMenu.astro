@@ -1,23 +1,12 @@
 ---
-// Hamburger menu button + off-canvas drawer for mobile navigation.
-// Hidden on desktop (>= 881px) via CSS. The desktop nav is rendered
-// directly in BaseLayout.astro.
+// Off-canvas drawer + backdrop for the mobile navigation.
+// Rendered at body level (after the header) in BaseLayout.astro so it
+// doesn't get trapped inside the header's z-index stacking context.
+//
+// The button lives in the header (see MobileMenuButton.astro). Both
+// share data-attributes and one inline script wires them up via
+// document.querySelector so order in the DOM doesn't matter.
 ---
-<button
-  class="menu-toggle"
-  type="button"
-  aria-label="Open menu"
-  aria-expanded="false"
-  aria-controls="mobile-nav"
-  data-menu-toggle
->
-  <span class="menu-toggle-icon" aria-hidden="true">
-    <span class="bar bar-1"></span>
-    <span class="bar bar-2"></span>
-    <span class="bar bar-3"></span>
-  </span>
-</button>
-
 <div
   class="mobile-nav-backdrop"
   data-menu-backdrop
@@ -68,13 +57,11 @@
       toggle.setAttribute('aria-label', 'Close menu');
       nav.hidden = false;
       backdrop.hidden = false;
-      // Defer to next frame so the transition has a starting state.
       requestAnimationFrame(() => {
         nav.classList.add('is-open');
         backdrop.classList.add('is-open');
       });
       document.body.style.overflow = 'hidden';
-      // Focus the close button for keyboard users.
       close.focus();
     }
 
@@ -85,7 +72,6 @@
       nav.classList.remove('is-open');
       backdrop.classList.remove('is-open');
       document.body.style.overflow = '';
-      // Wait for the transition to finish before hiding (avoids jank).
       const onEnd = () => {
         if (!isOpen) {
           nav.hidden = true;
@@ -100,16 +86,10 @@
     toggle.addEventListener('click', () => (isOpen ? closeMenu() : open()));
     close.addEventListener('click', closeMenu);
     backdrop.addEventListener('click', closeMenu);
-
-    // Close on any nav link click.
     links.forEach((a) => a.addEventListener('click', closeMenu));
-
-    // Close on Escape.
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && isOpen) closeMenu();
     });
-
-    // Close if window grows past the mobile breakpoint.
     const mq = window.matchMedia('(min-width: 881px)');
     mq.addEventListener('change', (e) => {
       if (e.matches && isOpen) closeMenu();
