@@ -1,4 +1,4 @@
-import type { Env } from './_shared';
+import type { APIRoute } from 'astro';
 import {
   json,
   getCookie,
@@ -11,10 +11,18 @@ import {
   nextUtcMidnightIso,
   handleOptions,
   corsHeaders,
-  type PagesFunction,
-} from './_shared';
-import { drawNine, POSITIONS } from '../../src/lib/draw';
-import { getSystemPrompt, buildUserPrompt, parseReadingJson, fallbackReading, type ReadingJson } from '../../src/lib/prompts';
+  type Env,
+} from '../../lib/reading-env';
+import { drawNine, POSITIONS } from '../../lib/draw';
+import {
+  getSystemPrompt,
+  buildUserPrompt,
+  parseReadingJson,
+  fallbackReading,
+  type ReadingJson,
+} from '../../lib/prompts';
+
+export const prerender = false;
 
 type Body = {
   openrouterKey?: string;
@@ -27,10 +35,55 @@ type Body = {
 const MAX_KEY_LEN = 256;
 const MAX_QUESTION_LEN = 500;
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
-  if (context.request.method === 'OPTIONS') return handleOptions(context.request);
-  const env = context.env;
-  const origin = context.request.headers.get('origin');
+async function callOpenRouter(
+  env: Env,
+  key: string,
+  cards: ReturnType<typeof drawNine>,
+  question: string,
+  locale: string,
+): Promise<ReadingJson> {
+  const model = env.OPENROUTER_MODEL || 'nvidia/nemotron-3.5-lightning:free';
+  const referer = env.SITE_URL || 'https://dailytarot.example.com';
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${key}`,
+        'http-referer': referer,
+        'x-title': 'Daily Tarot',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: 'system', content: getSystemPrompt(locale) },
+          { role: 'user', content: buildUserPrompt(cards, question, locale) },
+        ],
+        temperature: 0.9,
+        max_tokens: 1800,
+        stream: false,
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`OpenRouter ${res.status}: ${text.slice(0, 200)}`);
+    }
+    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) throw new Error('OpenRouter returned no content');
+    return parseReadingJson(content);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+const onRequestPost: APIRoute = async ({ request, locals, url }) => {
+  if (request.method === 'OPTIONS') return handleOptions(request);
+  const env = (locals as { runtime?: { env?: Env } }).runtime?.env || ({} as Env);
+  const origin = request.headers.get('origin');
 
   if (env.READINGS_PAUSED === 'true' || env.READINGS_PAUSED === '1') {
     return json(
@@ -43,13 +96,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   let body: Body = {};
   try {
-    const raw = await context.request.text();
+    const raw = await request.text();
     if (raw) {
       try {
         const parsed = JSON.parse(raw) as Body;
         body = parsed && typeof parsed === 'object' ? parsed : {};
       } catch {
-        const url = new URL(context.request.url);
         const qAction = url.searchParams.get('action');
         if (qAction === 'draw' || qAction === 'reject' || qAction === 'accept') {
           body = { action: qAction };
@@ -59,7 +111,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         }
       }
     } else {
-      const url = new URL(context.request.url);
       const qAction = url.searchParams.get('action');
       if (qAction === 'draw' || qAction === 'reject' || qAction === 'accept') {
         body = { action: qAction };
@@ -69,7 +120,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return json({ error: 'Invalid JSON body' }, { status: 400, headers: corsHeaders(origin) });
   }
 
-  // Prefer the server-side key (billed to site owner). User-supplied key is optional override.
   const serverKey = (env.OPENROUTER_DEFAULT_KEY || '').trim();
   const userKey = (body.openrouterKey || '').trim().slice(0, MAX_KEY_LEN);
   if (userKey && !/^sk-or-/.test(userKey)) {
@@ -79,10 +129,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const keySource: 'server' | 'user' | 'none' = serverKey ? 'server' : userKey ? 'user' : 'none';
   const question = (body.question || '').slice(0, MAX_QUESTION_LEN);
   const locale = (body.locale || 'en').toString().slice(0, 5);
-  const url = new URL(context.request.url);
   const useFallback = url.searchParams.get('fallback') === '1';
 
-  let uid = await verifySignedUid(secret, getCookie(context.request, 'dt_uid'));
+  let uid = await verifySignedUid(secret, getCookie(request, 'dt_uid'));
   let setCookieHeader: string | undefined;
   if (!uid) {
     const signed = await newSignedUid(secret);
@@ -92,8 +141,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const state = await readLimit(env, uid);
 
-  // ---- Guards ----
-  // Reject path: only allowed if the user has < 2 rejects and hasn't accepted.
   if (body.action === 'reject' && (state.rejections >= 2 || state.accepted)) {
     const res = json(
       { error: 'Daily limit reached', resetAtIso: nextUtcMidnightIso(), accepted: state.accepted },
@@ -103,7 +150,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return res;
   }
 
-  // Accept path: just record the fingerprint, no draw.
   if (body.action === 'accept') {
     state.accepted = true;
     state.acceptedFingerprint = (body.cardFingerprint || '').slice(0, 128);
@@ -117,7 +163,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     return res;
   }
 
-  // Draw path: blocked once the user has accepted, OR has used both rejects.
   if (body.action !== 'reject') {
     if (state.accepted) {
       const res = json(
@@ -161,9 +206,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
   }
 
-  // Remap the returned position names back to canonical English keys so the
-  // client can match them against the cards' `position.name`. Localized text
-  // stays in the chosen language; only the position key is normalized.
   const canonicalByIndex: Record<number, string> = {};
   for (const p of POSITIONS) canonicalByIndex[p.index] = p.name;
   reading.positionInterpretations = reading.positionInterpretations.map((pi) => {
@@ -204,47 +246,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   return res;
 };
 
-export const onRequestOptions: PagesFunction<Env> = async ({ request }) => handleOptions(request);
+const onRequestOptions: APIRoute = async ({ request }) => handleOptions(request);
 
-async function callOpenRouter(env: Env, key: string, cards: ReturnType<typeof drawNine>, question: string, locale: string): Promise<ReadingJson> {
-  const model = env.OPENROUTER_MODEL || 'nvidia/nemotron-3.5-lightning:free';
-  const referer = env.SITE_URL || 'https://dailytarot.example.com';
-  const controller = new AbortController();
-  // 30s budget — enough for slow free models, not enough to hang the user.
-  const timeout = setTimeout(() => controller.abort(), 30000);
-  try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${key}`,
-        'http-referer': referer,
-        'x-title': 'Daily Tarot',
-      },
-      body: JSON.stringify({
-        model,
-        // No response_format: many non-OpenAI-family models on OpenRouter don't
-        // honor json_object. We instruct the model to return only JSON via the
-        // system prompt, and parse defensively on the server.
-        messages: [
-          { role: 'system', content: getSystemPrompt(locale) },
-          { role: 'user', content: buildUserPrompt(cards, question, locale) },
-        ],
-        temperature: 0.9,
-        max_tokens: 1800,
-        stream: false,
-      }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new Error(`OpenRouter ${res.status}: ${text.slice(0, 200)}`);
-    }
-    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) throw new Error('OpenRouter returned no content');
-    return parseReadingJson(content);
-  } finally {
-    clearTimeout(timeout);
-  }
-}
+export const POST = onRequestPost;
+export const OPTIONS = onRequestOptions;

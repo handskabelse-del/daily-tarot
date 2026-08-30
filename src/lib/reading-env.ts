@@ -1,3 +1,9 @@
+// Shared types and helpers for the /api/reading and /api/limit Astro
+// endpoints. Previously lived at functions/api/_shared.ts as Cloudflare
+// Pages Functions. Now lives at src/lib so it can be imported from the
+// Astro API routes (which the Cloudflare adapter bundles into the same
+// worker that handles src/pages/api/*).
+
 export interface Env {
   DAILY_TAROT_KV?: KVNamespace;
   COOKIE_SECRET?: string;
@@ -7,18 +13,6 @@ export interface Env {
   ALLOW_FREE_FALLBACK?: string;
   READINGS_PAUSED?: string;
 }
-
-export interface PagesContext<E = unknown> {
-  request: Request;
-  env: E;
-  params: Record<string, string>;
-  waitUntil: (promise: Promise<unknown>) => void;
-  passThroughOnException: () => void;
-  next?: (input?: Request | string, init?: RequestInit) => Promise<Response>;
-  data?: Record<string, unknown>;
-}
-
-export type PagesFunction<E = unknown> = (context: PagesContext<E>) => Response | Promise<Response>;
 
 export type LimitState = {
   day: string;
