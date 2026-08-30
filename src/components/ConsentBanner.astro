@@ -23,10 +23,16 @@
       banner.remove();
     } else {
       banner.hidden = false;
+      // Add a class on <body> so the page can add bottom padding while
+      // the banner is on screen (the banner is position:fixed and would
+      // otherwise cover the bottom of the page, including the "Get my
+      // reading" button on mobile).
+      document.body.classList.add('consent-banner-active');
     }
     document.getElementById('consent-accept')?.addEventListener('click', () => {
       localStorage.setItem(KEY, 'accepted');
       banner.remove();
+      document.body.classList.remove('consent-banner-active');
       window.dispatchEvent(new CustomEvent('dt:consent-accepted'));
       try {
         const w = window as unknown as { adsbygoogle?: unknown[] };
@@ -36,6 +42,7 @@
     document.getElementById('consent-reject')?.addEventListener('click', () => {
       localStorage.setItem(KEY, 'rejected');
       banner.remove();
+      document.body.classList.remove('consent-banner-active');
     });
   })();
 </script>
