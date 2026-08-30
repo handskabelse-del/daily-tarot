@@ -12,6 +12,7 @@ export interface Props {
 }
 import '../styles/global.css';
 import SeoHead from '../components/SeoHead.astro';
+import MobileMenu from '../components/MobileMenu.astro';
 import ConsentBanner from '../components/ConsentBanner.astro';
 import { websiteJsonLd } from '../lib/seo';
 const { title, description, path, locale, type, image, noindex, jsonLd, availableLocales } = Astro.props;
@@ -70,7 +71,7 @@ const gaId = import.meta.env.PUBLIC_GA_ID;
           </svg>
           <span>Daily Tarot</span>
         </a>
-        <nav class="nav" aria-label="Primary">
+        <nav class="nav nav-desktop" aria-label="Primary">
           <a href="/">Reading</a>
           <a href="/card-of-the-day">Card of the day</a>
           <a href="/tarot-card-meanings">Card meanings</a>
@@ -78,6 +79,7 @@ const gaId = import.meta.env.PUBLIC_GA_ID;
           <a href="/es/">ES</a>
           <a href="/fr/">FR</a>
         </nav>
+        <MobileMenu />
       </div>
     </header>
     <main id="main" class="container">
