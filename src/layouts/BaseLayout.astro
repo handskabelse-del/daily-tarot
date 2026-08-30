@@ -15,6 +15,7 @@ import SeoHead from '../components/SeoHead.astro';
 import MobileMenu from '../components/MobileMenu.astro';
 import MobileMenuButton from '../components/MobileMenuButton.astro';
 import ConsentBanner from '../components/ConsentBanner.astro';
+import Toast from '../components/Toast.astro';
 import { websiteJsonLd } from '../lib/seo';
 const { title, description, path, locale, type, image, noindex, jsonLd, availableLocales } = Astro.props;
 const allJsonLd = [websiteJsonLd(), ...(jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [])];
@@ -100,5 +101,6 @@ const gaId = import.meta.env.PUBLIC_GA_ID;
       </div>
     </footer>
     <ConsentBanner />
+    <Toast />
   </body>
 </html>

@@ -277,14 +277,20 @@ const dict = t(locale);
     }
 
     async function refreshLimit() {
-      const data = await api<{ remaining: number; day: string; resetAtIso: string }>('/api/limit');
-      remaining = data.remaining;
-      if (remaining <= 0) {
-        showLock(data.resetAtIso);
-        return false;
+      try {
+        const data = await api<{ remaining: number; day: string; resetAtIso: string }>('/api/limit');
+        console.log('[refreshLimit] ok', data);
+        remaining = data.remaining;
+        if (remaining <= 0) {
+          showLock(data.resetAtIso);
+          return false;
+        }
+        updateRemainingPill();
+        return true;
+      } catch (e: any) {
+        console.warn('[refreshLimit] failed', e?.status, e?.message);
+        throw e;
       }
-      updateRemainingPill();
-      return true;
     }
 
     function showLock(resetAtIso: string) {
@@ -320,18 +326,29 @@ const dict = t(locale);
     }
 
     async function startDraw() {
+      // TEMP DIAGNOSTIC: log every guard so we can see what's blocking the click.
+      console.log('[startDraw] fired', {
+        state: stage.dataset.state,
+        acceptedToday: hasAcceptedToday(),
+        savedReading: readSavedReading() !== null,
+      });
       // Hard guard: only allow a fresh draw when the stage is in the intro state.
       // This blocks re-entry via DevTools tampering or rapid double-clicks.
       if (stage.dataset.state !== 'intro') {
+        console.warn('[startDraw] blocked: stage is not intro, state=', stage.dataset.state);
         return;
       }
       // Block only when the user has EXPLICITLY accepted a reading today.
       // A user who drew but didn't accept can still use a rejection.
       if (hasAcceptedToday()) {
+        console.warn('[startDraw] blocked: already accepted today (localStorage flag set)');
         return;
       }
+      console.log('[startDraw] calling refreshLimit...');
       const ok = await refreshLimit();
+      console.log('[startDraw] refreshLimit returned', ok);
       if (!ok) return;
+      console.log('[startDraw] calling doDraw...');
       await doDraw();
     }
 
@@ -360,16 +377,21 @@ const dict = t(locale);
         flipTimer = window.setTimeout(() => renderReading(data.reading, data.cards), 9 * 130 + 250);
         saveToLocal(data);
       } catch (e: any) {
+        console.error('[doDraw] error', e);
+        const toast = (window as any).dtToast as ((msg: string, kind?: string, ms?: number) => void) | undefined;
         if (e.status === 429) {
           showLock(e.body?.resetAtIso || new Date(Date.now() + 3600000).toISOString());
         } else if (e.status === 400) {
-          alert('The reading service could not be reached right now. Please try again in a moment.');
+          toast?.('Reading service error (400). Try again in a moment.', 'err');
           setState('intro');
         } else if (e.status === 402) {
-          alert('The reading service had a problem. Please try again in a moment.');
+          toast?.('Reading service had a problem (402). Try again.', 'err');
           setState('intro');
         } else {
-          alert('Could not reach the reading service. Please try again.');
+          // Most likely cause: the API endpoint returned 404 (function not deployed yet)
+          // or 500 (server error). The status code in the toast tells the user which.
+          const code = e.status || 'network';
+          toast?.('Reading service unavailable (' + code + '). Please refresh in 1 minute — the site is still deploying.', 'err', 10000);
           setState('intro');
         }
       }
@@ -490,6 +512,10 @@ const dict = t(locale);
     }
 
     (function restoreOrLock() {
+      console.log('[init] restoreOrLock starting', {
+        accepted: hasAcceptedToday(),
+        saved: readSavedReading() !== null,
+      });
       // If the user accepted a reading today, go straight to the Accepted
       // state with the live countdown. No "draw again" path from here.
       if (hasAcceptedToday()) {

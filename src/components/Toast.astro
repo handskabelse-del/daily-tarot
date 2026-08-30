@@ -1,0 +1,85 @@
+---
+// Lightweight toast system. Replaces alert() so errors are visible on
+// mobile. Inject any number of toasts via window.dtToast(message, kind).
+---
+<div id="toast-root" aria-live="polite" aria-atomic="false"></div>
+
+<script is:inline>
+  (() => {
+    const root = document.getElementById('toast-root');
+    if (!root) return;
+
+    function toast(message, kind = 'ok', ms = 6000) {
+      const el = document.createElement('div');
+      el.className = 'dt-toast dt-toast--' + kind;
+      el.setAttribute('role', kind === 'err' ? 'alert' : 'status');
+      el.textContent = message;
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'dt-toast__close';
+      close.setAttribute('aria-label', 'Close');
+      close.textContent = '×';
+      close.addEventListener('click', () => remove(el));
+      el.appendChild(close);
+      root.appendChild(el);
+      const t = window.setTimeout(() => remove(el), ms);
+      function remove(node) {
+        window.clearTimeout(t);
+        if (node.parentNode) node.parentNode.removeChild(node);
+      }
+    }
+
+    window.dtToast = toast;
+  })();
+</script>
+
+<style>
+  #toast-root {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 1rem;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1rem;
+    pointer-events: none;
+  }
+  .dt-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    max-width: 32rem;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 0.75rem;
+    background: rgba(20, 20, 42, 0.97);
+    color: var(--fg-0, #f4f4f8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    animation: dt-toast-in 0.18s ease-out;
+  }
+  .dt-toast--ok { border-color: rgba(106, 214, 201, 0.45); }
+  .dt-toast--err { border-color: rgba(232, 122, 122, 0.55); }
+  .dt-toast--warn { border-color: rgba(232, 201, 122, 0.5); }
+  .dt-toast__close {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.7;
+    padding: 0 0.25rem;
+  }
+  .dt-toast__close:hover { opacity: 1; }
+  @keyframes dt-toast-in {
+    from { opacity: 0; transform: translateY(0.5rem); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
